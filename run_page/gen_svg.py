@@ -1,7 +1,9 @@
 import argparse
+import datetime
 import logging
 import os
 import sys
+import cv2
 
 import appdirs
 from config import SQL_FILE
@@ -11,6 +13,8 @@ from gpxtrackposter import (
     grid_drawer,
     poster,
     track_loader,
+    calendar_drawer,
+    heatmap_drawer
 )
 from gpxtrackposter.exceptions import ParameterError, PosterError
 
@@ -27,6 +31,8 @@ def main():
         "grid": grid_drawer.GridDrawer(p),
         "circular": circular_drawer.CircularDrawer(p),
         "github": github_drawer.GithubDrawer(p),
+        "calendar": calendar_drawer.CalendarDrawer(p),
+        "heatmap": heatmap_drawer.HeatmapDrawer(p),
     }
 
     args_parser = argparse.ArgumentParser()
@@ -180,6 +186,34 @@ def main():
         help="activities db file",
     )
 
+    args_parser.add_argument(
+        "--only-run",
+        dest="only_run",
+        action="store_true",
+        help="if is only for running",
+    )
+
+    args_parser.add_argument(
+        "--with-mp4",
+        dest="with_mp4",
+        action="store_true",
+        help="add animation to the poster",
+    )
+
+    args_parser.add_argument(
+        "--with-animation",
+        dest="with_animation",
+        action="store_true",
+        help="add animation to the poster",
+    )
+    args_parser.add_argument(
+        "--animation-time",
+        dest="animation_time",
+        type=int,
+        default=10,
+        help="animation duration (default: 10s)",
+    )
+
     for _, drawer in drawers.items():
         drawer.create_args(args_parser)
 
@@ -207,7 +241,7 @@ def main():
         # for svg from db here if you want gpx please do not use --from-db
         # args.type == "grid" means have polyline data or not
         tracks = loader.load_tracks_from_db(
-            SQL_FILE, args.type == "grid", args.type == "circular"
+            SQL_FILE, args.type == "grid", args.type == "circular", args.only_run
         )
     else:
         tracks = loader.load_tracks(args.gpx_dir)
@@ -216,11 +250,13 @@ def main():
 
     is_circular = args.type == "circular"
 
-    if not is_circular:
+    if not is_circular and not args.type == "calendar":
         print(
             f"Creating poster of type {args.type} with {len(tracks)} tracks and storing it in file {args.output}..."
         )
     p.set_language(args.language)
+    p.set_with_animation(args.with_animation)
+    p.set_animation_time(args.animation_time)
     p.athlete = args.athlete
     if args.title:
         p.title = args.title
@@ -242,20 +278,82 @@ def main():
     }
     p.units = args.units
     p.set_tracks(tracks)
+    length_range = p.length_range
+    length_range_by_date = p.length_range_by_date
     # circular not add footer and header
-    p.drawer_type = "plain" if is_circular else "title"
+    p.drawer_type = "plain" if is_circular and not args.with_mp4 else "title"
     if args.type == "github":
         p.height = 55 + p.years.count() * 43
     # for special circular
     if is_circular:
         years = p.years.all()[:]
         for y in years:
+            if args.with_mp4:
+                date = datetime.date(y, 1, 1)
+                m_count = 0
+                svg_files = []
+                while date.year == y:
+                    text_date = date.strftime("%Y-%m-%d")
+                    m_tracks = [t for t in tracks if t.start_time_local.strftime("%Y-%m-%d") <= text_date]
+                    length = sum([t.length for t in tracks if t.start_time_local.strftime("%Y-%m-%d") == text_date])
+                    p.years.from_year, p.years.to_year = y, y
+                    # may be refactor
+                    if len(m_tracks) != m_count:
+                        p.set_tracks(m_tracks)
+                        p.length_range = length_range
+                        p.length_range_by_date = length_range_by_date
+                        p.draw(drawers[args.type], os.path.join("assets", f"circular_{text_date}.svg"))
+                        from cairosvg import svg2png
+                        svg2png(url=os.path.join("assets", f"circular_{text_date}.svg"),
+                                write_to=os.path.join("assets", f"circular_{text_date}.png"))
+                        svg_files.append(f"circular_{text_date}")
+                    date += datetime.timedelta(1)
+                    m_count = len(m_tracks)
+                if len(svg_files) != 0:
+                    w, h = None, None
+                    for file in svg_files:
+                        frame = cv2.imread(os.path.join("assets", f"{file}.png"))
+
+                        if w is None:
+                            # Setting up the video writer
+                            h, w, _ = frame.shape
+                            fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+                            writer = cv2.VideoWriter(os.path.join("assets", f'circular_{y}.mp4'), fourcc,
+                                                     len(svg_files) / args.animation_time, (w, h))
+
+                        writer.write(frame)
+                    writer.release()
+
+                    os.system('ffmpeg -i %s -i %s -map 0:v -map 1:a -c:v copy -shortest -y %s' % (
+                        os.path.join("assets", f'circular_{y}.mp4'),
+                        os.path.join("assets", 'background_wake.mp3'),
+                        os.path.join("assets", f'circular_{y}_bg.mp4')
+                    ))
+                    for file in svg_files:
+                        os.remove(os.path.join("assets", f"{file}.svg"))
+                        os.remove(os.path.join("assets", f"{file}.png"))
+                    os.remove(os.path.join("assets", f"circular_{y}.mp4"))
+                    os.rename(os.path.join("assets", f"circular_{y}_bg.mp4"),
+                              os.path.join("assets", f"circular_{y}.mp4"))
+            else:
+                p.years.from_year, p.years.to_year = y, y
+                # may be refactor
+                p.set_tracks([t for t in tracks if t.start_time_local.strftime("%Y") == str(y)])
+                p.draw(drawers[args.type], os.path.join("assets", f"year_{str(y)}.svg"))
+                # from cairosvg import svg2png
+                # svg2png(url=os.path.join("assets", f"year_{str(y)}.svg"),
+                #         write_to=os.path.join("assets", f"year_{str(y)}.png"))
+    if args.type == 'calendar':
+        years = p.years.all()[:]
+        for y in years:
             p.years.from_year, p.years.to_year = y, y
             # may be refactor
-            p.set_tracks(tracks)
-            p.draw(drawers[args.type], os.path.join("assets", f"year_{str(y)}.svg"))
+            p.set_tracks([t for t in tracks if t.start_time_local.strftime("%Y") == str(y)])
+            p.draw(drawers[args.type], os.path.join("assets", f"calendar_{str(y)}.svg"))
     else:
         p.draw(drawers[args.type], args.output)
+        from cairosvg import svg2png
+        svg2png(url=args.output, write_to=args.output.replace('svg', 'png'))
 
 
 if __name__ == "__main__":

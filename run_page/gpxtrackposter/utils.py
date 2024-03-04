@@ -7,7 +7,9 @@
 
 import locale
 import math
+import typing
 from datetime import datetime
+from itertools import takewhile, count as itercount
 from typing import List, Optional, Tuple
 
 import colour
@@ -127,6 +129,18 @@ def interpolate_color(color1: str, color2: str, ratio: float) -> str:
 
 def format_float(f):
     return locale.format_string("%.1f", f)
+
+
+def make_key_times(year_count: int) -> typing.List[str]:
+  """
+  year_count: year run date count
+  return: list of key times points
+
+  should append `1` because the svg keyTimes rule
+  """
+  s = list(takewhile(lambda n: n < 1, itercount(0, 1 / year_count)))
+  s.append(1)
+  return [str(round(i, 2)) for i in s]
 
 
 def parse_datetime_to_local(start_time, end_time, point):

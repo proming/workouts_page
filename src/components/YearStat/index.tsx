@@ -35,7 +35,7 @@ const YearStat = ({ year, onClick, onClickTypeInYear }: { year: string, onClick:
         workoutsCounts[run.type] = [1, (run.distance || 0) / run.average_speed, run.distance]
       }
     }
-    if (run.average_heartrate) {
+    if (run.average_heartrate && run.type == 'Run') {
       heartRate += run.average_heartrate;
     } else {
       heartRateNullCount++;

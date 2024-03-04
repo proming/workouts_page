@@ -2,12 +2,14 @@
 
 import gettext
 import locale
+import typing
 from collections import defaultdict
 from datetime import datetime
 
 import pytz
 import svgwrite
 
+from config import LOCALE_FOLDER
 from .utils import format_float
 from .value_range import ValueRange
 from .xy import XY
@@ -41,6 +43,7 @@ class Poster:
     def __init__(self):
         self.athlete = None
         self.title = None
+        self.year_tracks_date_count_dict: typing.Dict[int, int] = defaultdict(int)
         self.tracks_by_date = {}
         self.tracks = []
         self.length_range = None
@@ -58,13 +61,15 @@ class Poster:
         self.years = None
         self.tracks_drawer = None
         self.trans = None
+        self.with_animation = False
+        self.animation_time: int = 30
         self.set_language(None)
         self.tc_offset = datetime.now(pytz.timezone("Asia/Shanghai")).utcoffset()
 
     def set_language(self, language):
         if language:
             try:
-                locale.setlocale(locale.LC_ALL, f"{language}.utf8")
+                locale.setlocale(locale.LC_ALL, f"{language}.UTF-8")
             except locale.Error as e:
                 print(f'Cannot set locale to "{language}": {e}')
                 language = None
@@ -73,11 +78,17 @@ class Poster:
         # Fall-back to NullTranslations, if the specified language translation cannot be found.
         if language:
             lang = gettext.translation(
-                "gpxposter", localedir="locale", languages=[language], fallback=True
+                "gpxposter", localedir=LOCALE_FOLDER, languages=[language], fallback=True
             )
         else:
             lang = gettext.NullTranslations()
         self.trans = lang.gettext
+
+    def set_with_animation(self, with_animation: bool) -> None:
+        self.with_animation = with_animation
+
+    def set_animation_time(self, animation_time: int) -> None:
+        self.animation_time = animation_time
 
     def set_tracks(self, tracks):
         """Associate the set of tracks with this poster.
@@ -89,16 +100,24 @@ class Poster:
         self.tracks_by_date = {}
         self.length_range = ValueRange()
         self.length_range_by_date = ValueRange()
+        self.year_tracks_date_count_dict.clear()
         self.__compute_years(tracks)
+        distance1 = self.special_distance["special_distance"]
+        distance2 = self.special_distance["special_distance2"]
         for track in tracks:
             if not self.years.contains(track.start_time_local):
                 continue
             text_date = track.start_time_local.strftime("%Y-%m-%d")
+            year = track.start_time_local.year
+            if text_date not in self.tracks_by_date:
+                self.year_tracks_date_count_dict[year] += 1
             if text_date in self.tracks_by_date:
                 self.tracks_by_date[text_date].append(track)
             else:
                 self.tracks_by_date[text_date] = [track]
             self.length_range.extend(track.length)
+
+            track.special = distance1 <= track.length / 1000 or distance2 <= track.length / 1000
         for tracks in self.tracks_by_date.values():
             length = sum([t.length for t in tracks])
             self.length_range_by_date.extend(length)
@@ -110,10 +129,10 @@ class Poster:
         width = self.width
         if self.drawer_type == "plain":
             height = height - 100
-            self.colors["background"] = "#1a1a1a"
-            self.colors["track"] = "red"
-            self.colors["special"] = "yellow"
-            self.colors["text"] = "#e1ed5e"
+            # self.colors["background"] = "#1a1a1a"
+            # self.colors["track"] = "red"
+            # self.colors["special"] = "yellow"
+            # self.colors["text"] = "#e1ed5e"
         d = svgwrite.Drawing(output, (f"{width}mm", f"{height}mm"))
         d.viewbox(0, 0, self.width, height)
         d.add(d.rect((0, 0), (width, height), fill=self.colors["background"]))
@@ -146,14 +165,14 @@ class Poster:
 
     def __draw_header(self, d):
         text_color = self.colors["text"]
-        title_style = "font-size:12px; font-family:Arial; font-weight:bold;"
+        title_style = "font-size:12px; font-family:Source Han Sans CN; font-weight:bold;"
         d.add(d.text(self.title, insert=(10, 20), fill=text_color, style=title_style))
 
     def __draw_footer(self, d):
         text_color = self.colors["text"]
-        header_style = "font-size:4px; font-family:Arial"
-        value_style = "font-size:9px; font-family:Arial"
-        small_value_style = "font-size:3px; font-family:Arial"
+        header_style = "font-size:4px; font-family:Source Han Sans CN"
+        value_style = "font-size:9px; font-family:Source Han Sans CN"
+        small_value_style = "font-size:3px; font-family:Source Han Sans CN"
 
         (
             total_length,
@@ -197,7 +216,7 @@ class Poster:
         )
         d.add(
             d.text(
-                self.trans("Weekly") + ": " + format_float(len(self.tracks) / weeks),
+                self.trans("Weekly") + ": " + format_float(len(self.tracks) / weeks if weeks > 0 else 0),
                 insert=(120, self.height - 10),
                 fill=text_color,
                 style=small_value_style,
@@ -249,11 +268,11 @@ class Poster:
             weeks[(t.start_time_local.year, t.start_time_local.isocalendar()[1])] = 1
         self.total_length_year_dict = total_length_year_dict
         return (
-            total_length,
-            total_length / len(self.tracks),
-            length_range.lower(),
-            length_range.upper(),
-            len(weeks),
+            total_length if len(self.tracks) > 0 else 0,
+            total_length / len(self.tracks) if len(self.tracks) > 0 else 0,
+            length_range.lower() if len(self.tracks) > 0 else 0,
+            length_range.upper() if len(self.tracks) > 0 else 0,
+            len(weeks) if len(self.tracks) > 0 else 0,
         )
 
     def __compute_years(self, tracks):

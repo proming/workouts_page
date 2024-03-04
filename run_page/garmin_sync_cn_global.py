@@ -62,9 +62,11 @@ if __name__ == "__main__":
     # If the activity is manually imported with a GPX, the GPX file will be synced
 
     # load synced activity list
-    synced_activity = load_synced_activity_list()
-
     folder = FIT_FOLDER
+    downloaded_ids = get_downloaded_ids(folder)
+    synced_activity = load_synced_activity_list()
+    unsynced_ids = list(set(downloaded_ids) - set(synced_activity))
+
     # make gpx or tcx dir
     if not os.path.exists(folder):
         os.mkdir(folder)
@@ -74,7 +76,7 @@ if __name__ == "__main__":
         download_new_activities(
             secret_string_cn,
             auth_domain,
-            synced_activity,
+            downloaded_ids,
             is_only_running,
             folder,
             "fit",

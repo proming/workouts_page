@@ -17,7 +17,7 @@ from .exceptions import PosterError
 from .poster import Poster
 from .track import Track
 from .tracks_drawer import TracksDrawer
-from .utils import compute_grid
+from .utils import compute_grid, format_float, make_key_times
 from .value_range import ValueRange
 from .xy import XY
 
@@ -102,8 +102,8 @@ class CircularDrawer(TracksDrawer):
         if self._rings:
             self._draw_rings(dr, center, radius_range)
 
-        year_style = f"dominant-baseline: central; font-size:{min_size * 4.0 / 80.0}px; font-family:Arial;"
-        month_style = f"font-size:{min_size * 3.0 / 80.0}px; font-family:Arial;"
+        year_style = f"dominant-baseline: central; font-size:{min_size * 4.0 / 80.0}px; font-family:Source Han Sans CN;"
+        month_style = f"font-size:{min_size * 3.0 / 80.0}px; font-family:Source Han Sans CN;"
 
         dr.add(
             dr.text(
@@ -117,6 +117,7 @@ class CircularDrawer(TracksDrawer):
         )
         df = 360.0 / (366 if calendar.isleap(year) else 365)
         day = 0
+        animate_index = 1
         date = datetime.date(year, 1, 1)
         while date.year == year:
             text_date = date.strftime("%Y-%m-%d")
@@ -158,7 +159,13 @@ class CircularDrawer(TracksDrawer):
                 )
                 text.add(tpath)
                 dr.add(text)
+            year_count = self.poster.year_tracks_date_count_dict[year]
+            key_times_list = make_key_times(year_count if year_count != 0 else 1)
+            key_times_len = len(key_times_list)
             if text_date in self.poster.tracks_by_date:
+                values = ""
+                if self.poster.with_animation:
+                    values = ";".join(["0"] * animate_index) + ";" + ";".join(["1"] * (key_times_len - animate_index))
                 self._draw_circle_segment(
                     dr,
                     self.poster.tracks_by_date[text_date],
@@ -166,7 +173,10 @@ class CircularDrawer(TracksDrawer):
                     a2,
                     radius_range,
                     center,
+                    values=values,
+                    key_times=";".join(key_times_list),
                 )
+                animate_index += 1
 
             day += 1
             date += datetime.timedelta(1)
@@ -219,10 +229,19 @@ class CircularDrawer(TracksDrawer):
         a2: float,
         rr: ValueRange,
         center: XY,
+        values: str = "",
+        key_times: str = "",
     ):
         length = sum([t.length for t in tracks])
-        has_special = len([t for t in tracks if t.special]) > 0
+        # has_special = len([t for t in tracks if t.special]) > 0
+        # color = self.color(self.poster.length_range_by_date, length, has_special)
+        distance1 = self.poster.special_distance["special_distance"]
+        distance2 = self.poster.special_distance["special_distance2"]
+        has_special = distance1 < length / 1000 < distance2
         color = self.color(self.poster.length_range_by_date, length, has_special)
+        if length / 1000 >= distance2:
+            color = self.poster.colors.get("special2") or self.poster.colors.get("special")
+
         r1 = rr.lower()
         r2 = (
             rr.lower()
@@ -238,4 +257,17 @@ class CircularDrawer(TracksDrawer):
         path.push("l", (r2 - r1) * sin_a1, (r1 - r2) * cos_a1)
         path.push(f"a{r2},{r2} 0 0,0 {r2 * (sin_a2 - sin_a1)},{r2 * (cos_a1 - cos_a2)}")
         path.push("l", (r1 - r2) * sin_a2, (r2 - r1) * cos_a2)
+        date_title = tracks[0].start_time_local.strftime("%Y-%m-%d")
+        str_length = format_float(self.poster.m2u(length))
+        path.set_desc(title=f"{date_title} {str_length} {self.poster.u()}")
+        if self.poster.with_animation:
+            path.add(
+                svgwrite.animate.Animate(
+                    "opacity",
+                    dur=f"{self.poster.animation_time}s",
+                    values=values,
+                    keyTimes=key_times,
+                    repeatCount="indefinite",
+                )
+            )
         dr.add(path)

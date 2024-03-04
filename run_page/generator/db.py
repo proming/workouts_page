@@ -91,7 +91,7 @@ def update_or_create_activity(session, run_activity):
                 try:
                     location_country = str(
                         g.reverse(
-                            f"{start_point.lat}, {start_point.lon}", language="zh-CN"
+                            f"{start_point.lat}, {start_point.lon}", language="zh-CN", timeout=30
                         )
                     )
                 # limit (only for the first time)
@@ -100,7 +100,7 @@ def update_or_create_activity(session, run_activity):
                         location_country = str(
                             g.reverse(
                                 f"{start_point.lat}, {start_point.lon}",
-                                language="zh-CN",
+                                language="zh-CN", timeout=30
                             )
                         )
                     except Exception as e:
@@ -137,6 +137,28 @@ def update_or_create_activity(session, run_activity):
                 run_activity.map and run_activity.map.summary_polyline or ""
             )
             activity.source = source
+            start_point = run_activity.start_latlng
+            location_country = activity.location_country
+            # or China for #176 to fix
+            if location_country == "" and start_point or location_country == "China":
+              try:
+                location_country = str(
+                  g.reverse(
+                    f"{start_point.lat}, {start_point.lon}", language="zh-CN", timeout=30
+                  )
+                )
+              # limit (only for the first time)
+              except Exception as e:
+                try:
+                  location_country = str(
+                    g.reverse(
+                      f"{start_point.lat}, {start_point.lon}",
+                      language="zh-CN", timeout=30
+                    )
+                  )
+                except Exception as e:
+                  pass
+            activity.location_country = location_country
     except Exception as e:
         print(f"something wrong with {run_activity.id}")
         print(str(e))
