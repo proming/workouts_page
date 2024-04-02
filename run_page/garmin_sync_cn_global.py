@@ -101,6 +101,7 @@ if __name__ == "__main__":
         save_fit_name_mapping(names_mapping)
 
     to_upload_files = []
+    new_ids = list(set(new_ids) - set(synced_activity))
     for i in new_ids:
         if os.path.exists(os.path.join(FIT_FOLDER, f"{i}.fit")):
             # upload fit files

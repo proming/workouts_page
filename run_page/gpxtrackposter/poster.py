@@ -135,13 +135,17 @@ class Poster:
             # self.colors["text"] = "#e1ed5e"
         d = svgwrite.Drawing(output, (f"{width}mm", f"{height}mm"))
         d.viewbox(0, 0, self.width, height)
-        d.add(d.rect((0, 0), (width, height), fill=self.colors["background"]))
+        if not self.no_background:
+            d.add(d.rect((0, 0), (width, height), fill=self.colors["background"]))
+            offset = 0
+        else:
+          offset = 10
         if not self.drawer_type == "plain":
             self.__draw_header(d)
             self.__draw_footer(d)
             self.__draw_tracks(d, XY(width - 20, height - 30 - 30), XY(10, 30))
         else:
-            self.__draw_tracks(d, XY(width - 20, height), XY(10, 0))
+            self.__draw_tracks(d, XY(width - 20, height - offset * 2), XY(10, offset))
         d.save()
 
     def m2u(self, m):

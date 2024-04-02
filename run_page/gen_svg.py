@@ -6,6 +6,8 @@ import sys
 import cv2
 
 import appdirs
+
+import utils
 from config import SQL_FILE
 from gpxtrackposter import (
     circular_drawer,
@@ -14,13 +16,18 @@ from gpxtrackposter import (
     poster,
     track_loader,
     calendar_drawer,
-    heatmap_drawer
+    heatmap_drawer,
+    laps_drawer
 )
 from gpxtrackposter.exceptions import ParameterError, PosterError
 
 # from flopp great repo
 __app_name__ = "create_poster"
 __app_author__ = "flopp.net"
+
+from gpxtrackposter.track import Track
+
+from synced_data_file_logger import load_generated_activity_list, save_generated_activity_list
 
 
 def main():
@@ -33,6 +40,7 @@ def main():
         "github": github_drawer.GithubDrawer(p),
         "calendar": calendar_drawer.CalendarDrawer(p),
         "heatmap": heatmap_drawer.HeatmapDrawer(p),
+        "laps": laps_drawer.LapsDrawer(p),
     }
 
     args_parser = argparse.ArgumentParser()
@@ -213,6 +221,20 @@ def main():
         default=10,
         help="animation duration (default: 10s)",
     )
+    args_parser.add_argument(
+        "--no-background",
+        dest="no_background",
+        action="store_true",
+        help="no draw background",
+    )
+    args_parser.add_argument(
+        "--blog-dir",
+        dest="blog_dir",
+        metavar="DIR",
+        type=str,
+        default=".",
+        help="Directory containing blog files (default: current directory).",
+    )
 
     for _, drawer in drawers.items():
         drawer.create_args(args_parser)
@@ -262,6 +284,11 @@ def main():
         p.title = args.title
     else:
         p.title = p.trans("MY TRACKS")
+
+    if args.no_background:
+        p.no_background = True
+    else:
+        p.no_background = False
 
     p.special_distance = {
         "special_distance": args.special_distance,
@@ -350,6 +377,44 @@ def main():
             # may be refactor
             p.set_tracks([t for t in tracks if t.start_time_local.strftime("%Y") == str(y)])
             p.draw(drawers[args.type], os.path.join("assets", f"calendar_{str(y)}.svg"))
+    if args.type == 'laps':
+        generated_activity = load_generated_activity_list()
+        for track in tracks:
+            # t = Track()
+            # t.load_fit("FIT_OUT/251304010.fit")
+            # if track.run_id in generated_activity:
+            #     continue
+
+            if track.polylines is None or len(track.polylines) == 0 or len(track.polylines[0]) == 0:
+                continue
+
+            file_name = track.start_time_local.strftime("%Y%m%d") + "_" + str(track.run_id)
+            # file_name = str(track.run_id)
+
+            p.width = 120
+            p.height = 190
+            p.drawer_type = "plain"
+            p.set_tracks([track])
+            p.draw(drawers[args.type], os.path.join(f"{args.blog_dir}/../assets", f"{file_name}.svg"))
+
+            with open(os.path.join(f"{args.blog_dir}/run", f"{file_name}.md"), "w") as f:
+                f.write(f"---\n")
+                # f.write(f"layout: post\n")
+                f.write(f"title: {track.start_time_local.strftime('%Y-%m-%d')} 跑步日记\n")
+                f.write(f"created: {track.start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+                f.write(f"date: {track.start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+                f.write(f"author: Jogger\n")
+                f.write(f"tags: [跑步]\n")
+                f.write(f"---\n")
+                f.write(f"**时间：** {track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')}  \n")
+                f.write(f"**距离：** {track.length/1000:.2f} km  \n")
+                f.write(f"**时长：** {utils.get_time_delta(track.start_time, track.end_time)}  \n")
+                f.write(f"**配速：** {track.average_speed * 3.6:.2f} km/h  \n")
+                f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
+                f.write(f"![{file_name}](/assets/{file_name}.svg)\n")
+
+            generated_activity.append(track.run_id)
+        save_generated_activity_list(generated_activity)
     else:
         p.draw(drawers[args.type], args.output)
         from cairosvg import svg2png

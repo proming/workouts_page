@@ -125,3 +125,12 @@ def upload_file_to_strava(client, file_name, data_type, force_to_run=True):
         print(
             f"Uploading {data_type} file: {file_name} to strava, upload_id: {r.upload_id}."
         )
+
+
+def get_time_delta(start_time, end_time):
+    total_seconds = (end_time - start_time).total_seconds()
+    # 按照秒数转换成小时、分钟、秒表示
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    seconds = int(total_seconds % 60)
+    return ("" if hours == 0 else f"{hours}:") + f"{minutes:02d}:" + f"{seconds:02d}"

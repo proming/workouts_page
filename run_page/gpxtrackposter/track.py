@@ -47,6 +47,7 @@ class Track:
         self.length = 0
         self.special = False
         self.average_heartrate = None
+        self.average_speed = 0
         self.moving_dict = {}
         self.run_id = 0
         self.start_latlng = []
@@ -110,11 +111,11 @@ class Track:
     def load_from_db(self, activity):
         # use strava as file name
         self.file_names = [str(activity.run_id)]
-        start_time = datetime.datetime.strptime(
+        self.start_time = datetime.datetime.strptime(
             activity.start_date_local, "%Y-%m-%d %H:%M:%S"
         )
-        self.start_time_local = start_time
-        self.end_time = start_time + activity.elapsed_time
+        self.start_time_local = self.start_time
+        self.end_time = self.start_time + activity.elapsed_time
         self.length = float(activity.distance)
         if IGNORE_BEFORE_SAVING:
             summary_polyline = filter_out(activity.summary_polyline)
@@ -123,6 +124,8 @@ class Track:
         polyline_data = polyline.decode(summary_polyline) if summary_polyline else []
         self.polylines = [[s2.LatLng.from_degrees(p[0], p[1]) for p in polyline_data]]
         self.run_id = activity.run_id
+        self.average_heartrate = activity.average_heartrate
+        self.average_speed = activity.average_speed
 
     def bbox(self):
         """Compute the smallest rectangle that contains the entire track (border box)."""

@@ -1,5 +1,5 @@
 import os
-from config import SYNCED_FILE, SYNCED_ACTIVITY_FILE, NAME_MAPPING_FILE
+from config import SYNCED_FILE, SYNCED_ACTIVITY_FILE, NAME_MAPPING_FILE, GENERATED_ACTIVITY_FILE
 import json
 
 
@@ -56,3 +56,20 @@ def load_fit_name_mapping():
 def save_fit_name_mapping(name_mapping: dict):
     with open(NAME_MAPPING_FILE, "w") as f:
         json.dump(name_mapping, f)
+
+
+def save_generated_activity_list(activity_list: list):
+    with open(GENERATED_ACTIVITY_FILE, "w") as f:
+        json.dump(activity_list, f)
+
+
+def load_generated_activity_list():
+    if os.path.exists(GENERATED_ACTIVITY_FILE):
+        with open(GENERATED_ACTIVITY_FILE, "r") as f:
+            try:
+                return json.load(f)
+            except Exception as e:
+                print(f"json load {GENERATED_ACTIVITY_FILE} \nerror {e}")
+                pass
+
+    return []

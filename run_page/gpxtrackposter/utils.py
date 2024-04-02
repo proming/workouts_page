@@ -29,6 +29,7 @@ except:
 from .value_range import ValueRange
 from .xy import XY
 
+EARTH_RADIUS_METERS = 6367000.0
 
 # mercator projection
 def latlng2xy(latlng: s2.LatLng) -> XY:
@@ -77,6 +78,32 @@ def project(
         if len(line) > 0:
             lines.append(line)
     return lines
+
+
+def filter_route(route, distance):
+    if not route or len(route) < 2:
+        # 如果路线数组为空或只有一个点，就不需要处理
+        return route
+
+    # 计算去除起始点后500米内的点
+    start_point = route[0]
+    start_length = 0
+    for start_index, latlng in enumerate(route):
+        start_length += start_point.get_distance(latlng).radians * EARTH_RADIUS_METERS
+        start_point = latlng
+        if start_length > distance:
+            break
+    # 计算去除结束点前500米内的点
+    end_point = route[-1]
+    end_length = 0
+    for end_index in range(len(route) - 1, -1, -1):
+        end_length += end_point.get_distance(route[end_index]).radians * EARTH_RADIUS_METERS
+        end_point = route[end_index]
+        if end_length > distance:
+            break
+
+    filtered_route = route[max(start_index, 1):min(end_index + 1, len(route))]
+    return filtered_route
 
 
 def compute_bounds_xy(lines: List[List[XY]]) -> Tuple[ValueRange, ValueRange]:
