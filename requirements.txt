@@ -34,3 +34,12 @@ html.parser
 aiofiles
 # if you need to import kml file
 #fastkml
+
+pytz
+opencv-python
+requests
+tzfpy
+timezonefinder
+Pint
+fastkml
+beautifulsoup4
