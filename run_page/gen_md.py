@@ -133,7 +133,7 @@ def main():
     with open(f"{args.blog_dir}/run/run_stats.md", "w") as f:
         f.write(f"---\n")
         # f.write(f"layout: post\n")
-        f.write(f"title: 跑步总结（{datetime.now().strftime('%Y-%m-%d')} 更新）\n")
+        f.write(f"title: 跑步总结（{tracks[-1].start_time_local.strftime('%Y-%m-%d')} 更新）\n")
         f.write(f"created: 2018-12-15T07:33:48+08:00\n")
         f.write(f"date: {tracks[-1].start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
         f.write(f"author: Jogger\n")
