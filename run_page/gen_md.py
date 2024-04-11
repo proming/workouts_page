@@ -135,7 +135,7 @@ def main():
         # f.write(f"layout: post\n")
         f.write(f"title: 跑步总结（{datetime.now().strftime('%Y-%m-%d')} 更新）\n")
         f.write(f"created: 2018-12-15T07:33:48+08:00\n")
-        f.write(f"date: {datetime.now().strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+        f.write(f"date: {tracks[-1].start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
         f.write(f"author: Jogger\n")
         f.write(f"tags: [跑步]\n")
         f.write(f"---\n")
@@ -147,7 +147,7 @@ def main():
         generate_year_stat_svg(None, year_stats, args.blog_dir)
         f.write(f"![run-stats](/assets/run-stats.svg)\n")
 
-        sorted_keys = sorted(year_stats.keys())
+        sorted_keys = sorted(year_stats.keys(), reverse=True)
         for key in sorted_keys:
             f.write(f"\n")
             f.write(f"---\n")
