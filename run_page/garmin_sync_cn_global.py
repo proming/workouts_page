@@ -103,7 +103,7 @@ if __name__ == "__main__":
     to_upload_files = []
     if new_ids is None:
         new_ids = set()
-    new_ids = new_ids.update(unsynced_ids)
+    new_ids.update(unsynced_ids)
     for i in new_ids:
         if os.path.exists(os.path.join(FIT_FOLDER, f"{i}.fit")):
             # upload fit files
