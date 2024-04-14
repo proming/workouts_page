@@ -382,8 +382,8 @@ def main():
         for track in tracks:
             # t = Track()
             # t.load_fit("FIT_OUT/251304010.fit")
-            # if track.run_id in generated_activity:
-            #     continue
+            if track.run_id in generated_activity:
+                continue
 
             if track.polylines is None or len(track.polylines) == 0 or len(track.polylines[0]) == 0:
                 continue
