@@ -295,9 +295,9 @@ def generate_year_stat_svg(year, data, blog_dir):
 
     # Create the SVG document
     if year is None:
-        dwg = svgwrite.Drawing(f"{blog_dir}/../assets/run-stats.svg", profile='tiny', size=(width, height))
+        dwg = svgwrite.Drawing(f"{blog_dir}/../../../assets/run-stats.svg", profile='tiny', size=(width, height))
     else:
-        dwg = svgwrite.Drawing(f"{blog_dir}/../assets/stat-{year}.svg", profile='tiny', size=(width, height))
+        dwg = svgwrite.Drawing(f"{blog_dir}/../../../assets/stat-{year}.svg", profile='tiny', size=(width, height))
 
     # Add axes
     # dwg.add(dwg.line((margin, height - margin), (width - margin, height - margin), stroke='black'))  # x-axis
