@@ -395,7 +395,7 @@ def main():
             p.height = 190
             p.drawer_type = "plain"
             p.set_tracks([track])
-            p.draw(drawers[args.type], os.path.join(f"{args.blog_dir}/../assets", f"{file_name}.svg"))
+            p.draw(drawers[args.type], os.path.join(f"{args.blog_dir}/../../../assets", f"{file_name}.svg"))
 
             with open(os.path.join(f"{args.blog_dir}/run", f"{file_name}.md"), "w") as f:
                 f.write(f"---\n")
