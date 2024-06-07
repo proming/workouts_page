@@ -164,18 +164,24 @@ def main():
             f.write("```echarts {height=480}\n")
             echart_option = {
                 "tooltip": {
+                    "trigger": 'axis',
                     "show": True
                 },
                 "xAxis": {
-                    "type": "time",
+                    "type": "category",
                     "data": year_stats[key]['run_time']
                 },
                 "yAxis": {
-                    "type": "value"
+                    "type": "value",
+                    "scale": True
                 },
                 "series": [
                     {
+                        "name": '平均心率',
                         "data": year_stats[key]['run_heartrate'],
+                        "itemStyle": {
+                            "color": "rgb(228,154,82)"
+                        },
                         "type": "line"
                     }
                 ]
