@@ -214,13 +214,16 @@ def add_year_stats(year_stat, track):
                            'run_heartrate': [track.average_heartrate]
                            }
     else:
+        year_stat[year]['run_time'].append(track.start_time_local.strftime('%Y-%m-%d %H:%M:%S'))
+        year_stat[year]['run_heartrate'].append(track.average_heartrate)
+
         year_stat[year] = {
             'runs': year_stat[year]['runs'] + 1,
             'distance': year_stat[year]['distance'] + track.length / 1000,
             'sum_heartrate': year_stat[year]['sum_heartrate'] + track.average_heartrate,
             'average_heartrate': (year_stat[year]['sum_heartrate'] + track.average_heartrate) / (year_stat[year]['runs'] + 1),
-            'run_time': year_stat[year]['run_time'].append(track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')),
-            'run_heartrate': year_stat[year]['run_heartrate'].append(track.average_heartrate)
+            'run_time': year_stat[year]['run_time'],
+            'run_heartrate': year_stat[year]['run_heartrate']
         }
 
     return year_stat
