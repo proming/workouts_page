@@ -160,7 +160,94 @@ def main():
             f.write(f"平均心率: {year_stats[key]['average_heartrate']:.0f} bpm  \n")
 
             generate_year_stat_svg(key, month_stats[key], args.blog_dir)
-            f.write(f"![stat-{key}](/assets/stat-{key}.svg)\n")
+            # f.write(f"![stat-{key}](/assets/stat-{key}.svg)\n")
+            # 月度统计chart
+            months = []
+            distances = []
+            heartrates = []
+            # 遍历解析后的数据并填充数组
+            for month, values in month_stats[key].items():
+                months.append(month)
+                distances.append(values["distance"])
+                heartrates.append(values["average_heartrate"])
+
+            f.write("```echarts {height=480}\n")
+            echart_option = {
+                "tooltip": {
+                    "trigger": 'axis',
+                    "show": True
+                },
+                "xAxis": {
+                    "type": "category",
+                    "data": months,
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f'{track_color}',
+                        },
+                    },
+                },
+                "yAxis": [
+                    {
+                        "name": "跑步距离(km)",
+                        "type": "value",
+                        "scale": True,
+                        "splitLine": False,
+                        "nameLocation": "center",
+                        "nameRotate": "90",
+                        "nameGap": 30,
+                        "nameTextStyle": {
+                            "color": f"{track_color}"
+                        },
+                        "axisLabel": {
+                            "textStyle": {
+                                "color": f"{track_color}",
+                            },
+                        },
+                    },
+                    {
+                        "name": "平均心率(bpm)",
+                        "type": "value",
+                        "scale": True,
+                        "splitLine": False,
+                        "nameLocation": "center",
+                        "nameRotate": "90",
+                        "nameGap": 30,
+                        "nameTextStyle": {
+                            "color": f"{special_color2}"
+                        },
+                        "axisLabel": {
+                            "textStyle": {
+                                "color": f"{special_color2}",
+                            },
+                        },
+                    }
+                ],
+                "series": [
+                    {
+                        "name": '跑步距离(km)',
+                        "data": distances,
+                        "itemStyle": {
+                            "color": f"{track_color}"
+                        },
+                        "yAxisIndex": 0,
+                        "type": "line"
+                    },
+                    {
+                        "name": '平均心率(bpm)',
+                        "data": heartrates,
+                        "itemStyle": {
+                            "color": f"{special_color2}"
+                        },
+                        "yAxisIndex": 1,
+                        "type": "line"
+                    }
+                ]
+            }
+            f.write(json.dumps(echart_option, ensure_ascii=False, indent=2))
+            f.write("\n")
+            f.write("```\n")
+
+            # 心率chart
             f.write("```echarts {height=480}\n")
             echart_option = {
                 "tooltip": {
@@ -177,6 +264,7 @@ def main():
                     },
                 },
                 "yAxis": {
+                    "name": "平均心率(bpm)",
                     "type": "value",
                     "scale": True,
                     "splitLine": False,
@@ -194,7 +282,7 @@ def main():
                 },
                 "series": [
                     {
-                        "name": '平均心率',
+                        "name": '平均心率(bpm)',
                         "data": year_stats[key]['run_heartrate'],
                         "itemStyle": {
                             "color": f"{special_color2}"
