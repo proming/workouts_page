@@ -169,18 +169,35 @@ def main():
                 },
                 "xAxis": {
                     "type": "category",
-                    "data": year_stats[key]['run_time']
+                    "data": year_stats[key]['run_time'],
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f'{track_color}',
+                        },
+                    },
                 },
                 "yAxis": {
                     "type": "value",
-                    "scale": True
+                    "scale": True,
+                    "splitLine": False,
+                    "nameLocation": "center",
+                    "nameRotate": "90",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                        "color": f"{special_color2}"
+                    },
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f"{special_color2}",
+                        },
+                    },
                 },
                 "series": [
                     {
                         "name": '平均心率',
                         "data": year_stats[key]['run_heartrate'],
                         "itemStyle": {
-                            "color": "rgb(228,154,82)"
+                            "color": f"{special_color2}"
                         },
                         "type": "line"
                     }
@@ -216,11 +233,11 @@ def add_year_stats(year_stat, track):
                            'distance': track.length / 1000,
                            'sum_heartrate': track.average_heartrate,
                            'average_heartrate': track.average_heartrate,
-                           'run_time': [track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')],
+                           'run_time': [track.start_time_local.strftime('%m-%d')],
                            'run_heartrate': [track.average_heartrate]
                            }
     else:
-        year_stat[year]['run_time'].append(track.start_time_local.strftime('%Y-%m-%d %H:%M:%S'))
+        year_stat[year]['run_time'].append(track.start_time_local.strftime('%m-%d'))
         year_stat[year]['run_heartrate'].append(track.average_heartrate)
 
         year_stat[year] = {
