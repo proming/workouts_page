@@ -147,7 +147,91 @@ def main():
         f.write(f"平均距离: {total_stats['distance']/total_stats['runs']:.2f} km  \n")
         f.write(f"平均心率: {total_stats['average_heartrate']:.0f} bpm  \n")
         generate_year_stat_svg(None, year_stats, args.blog_dir)
-        f.write(f"![run-stats](/assets/run-stats.svg)\n")
+        # f.write(f"![run-stats](/assets/run-stats.svg)\n")
+        years = []
+        distances = []
+        heartrates = []
+        # 遍历解析后的数据并填充数组
+        for year, values in year_stats.items():
+            years.append(year)
+            distances.append(round(values["distance"], 2))
+            heartrates.append(round(values["average_heartrate"], 0))
+
+        f.write("```echarts {height=300}\n")
+        echart_option = {
+            "tooltip": {
+                "trigger": 'axis',
+                "show": True
+            },
+            "xAxis": {
+                "type": "category",
+                "data": years,
+                "axisLabel": {
+                    "textStyle": {
+                        "color": f'{track_color}',
+                    },
+                },
+            },
+            "yAxis": [
+                {
+                    "name": "跑步距离(km)",
+                    "type": "value",
+                    "scale": True,
+                    "splitLine": False,
+                    "nameLocation": "center",
+                    "nameRotate": "90",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                        "color": f"{track_color}"
+                    },
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f"{track_color}",
+                        },
+                    },
+                },
+                {
+                    "name": "平均心率(bpm)",
+                    "type": "value",
+                    "scale": True,
+                    "splitLine": False,
+                    "nameLocation": "center",
+                    "nameRotate": "90",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                        "color": f"{special_color2}"
+                    },
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f"{special_color2}",
+                        },
+                    },
+                }
+            ],
+            "series": [
+                {
+                    "name": '跑步距离(km)',
+                    "data": distances,
+                    "itemStyle": {
+                        "color": f"{track_color}"
+                    },
+                    "yAxisIndex": 0,
+                    "type": "bar"
+                },
+                {
+                    "name": '平均心率(bpm)',
+                    "data": heartrates,
+                    "itemStyle": {
+                        "color": f"{special_color2}"
+                    },
+                    "yAxisIndex": 1,
+                    "type": "line"
+                }
+            ]
+        }
+        f.write(json.dumps(echart_option, ensure_ascii=False, indent=2))
+        f.write("\n")
+        f.write("```\n")
 
         sorted_keys = sorted(year_stats.keys(), reverse=True)
         for key in sorted_keys:
@@ -168,10 +252,10 @@ def main():
             # 遍历解析后的数据并填充数组
             for month, values in month_stats[key].items():
                 months.append(month)
-                distances.append(values["distance"])
-                heartrates.append(values["average_heartrate"])
+                distances.append(round(values["distance"], 2))
+                heartrates.append(round(values["average_heartrate"], 0))
 
-            f.write("```echarts {height=200}\n")
+            f.write("```echarts {height=300}\n")
             echart_option = {
                 "tooltip": {
                     "trigger": 'axis',
@@ -248,7 +332,7 @@ def main():
             f.write("```\n")
 
             # 心率chart
-            f.write("```echarts {height=200}\n")
+            f.write("```echarts {height=300}\n")
             echart_option = {
                 "tooltip": {
                     "trigger": 'axis',
