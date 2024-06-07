@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 from datetime import datetime
 
@@ -160,6 +161,28 @@ def main():
 
             generate_year_stat_svg(key, month_stats[key], args.blog_dir)
             f.write(f"![stat-{key}](/assets/stat-{key}.svg)\n")
+            f.write("```echarts {height=480}\n")
+            echart_option = {
+                "tooltip": {
+                    "show": True
+                },
+                "xAxis": {
+                    "type": "time",
+                    "data": year_stats[key]['run_time']
+                },
+                "yAxis": {
+                    "type": "value"
+                },
+                "series": [
+                    {
+                        "data": year_stats[key]['run_heartrate'],
+                        "type": "line"
+                    }
+                ]
+            }
+            f.write(json.dumps(echart_option, ensure_ascii=False, indent=2))
+            f.write("\n")
+            f.write("```\n")
             f.write(f"\n")
             f.write("| 1月 | 2月 | 3月 | 4月 | 5月 | 6月 |\n")
             f.write("| :-: | :-: | :-: | :-: | :-: | :-: |\n")
@@ -183,16 +206,21 @@ def add_year_stats(year_stat, track):
     year = track.start_time_local.year
 
     if year not in year_stat:
-        year_stat[year] = {'runs': 1, 'distance': track.length / 1000,
+        year_stat[year] = {'runs': 1,
+                           'distance': track.length / 1000,
                            'sum_heartrate': track.average_heartrate,
-                           'average_heartrate': track.average_heartrate
+                           'average_heartrate': track.average_heartrate,
+                           'run_time': [track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')],
+                           'run_heartrate': [track.average_heartrate]
                            }
     else:
         year_stat[year] = {
             'runs': year_stat[year]['runs'] + 1,
             'distance': year_stat[year]['distance'] + track.length / 1000,
             'sum_heartrate': year_stat[year]['sum_heartrate'] + track.average_heartrate,
-            'average_heartrate': (year_stat[year]['sum_heartrate'] + track.average_heartrate) / (year_stat[year]['runs'] + 1)
+            'average_heartrate': (year_stat[year]['sum_heartrate'] + track.average_heartrate) / (year_stat[year]['runs'] + 1),
+            'run_time': year_stat[year]['run_time'].append(track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')),
+            'run_heartrate': year_stat[year]['run_heartrate'].append(track.average_heartrate)
         }
 
     return year_stat
