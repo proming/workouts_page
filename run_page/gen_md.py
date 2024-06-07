@@ -171,7 +171,7 @@ def main():
                 distances.append(values["distance"])
                 heartrates.append(values["average_heartrate"])
 
-            f.write("```echarts {height=480}\n")
+            f.write("```echarts {height=200}\n")
             echart_option = {
                 "tooltip": {
                     "trigger": 'axis',
@@ -230,7 +230,7 @@ def main():
                             "color": f"{track_color}"
                         },
                         "yAxisIndex": 0,
-                        "type": "line"
+                        "type": "bar"
                     },
                     {
                         "name": '平均心率(bpm)',
@@ -248,7 +248,7 @@ def main():
             f.write("```\n")
 
             # 心率chart
-            f.write("```echarts {height=480}\n")
+            f.write("```echarts {height=200}\n")
             echart_option = {
                 "tooltip": {
                     "trigger": 'axis',
