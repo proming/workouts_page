@@ -166,6 +166,12 @@ def main():
             "xAxis": {
                 "type": "category",
                 "data": years,
+                "name": "年度",
+                "nameLocation": "center",
+                "nameGap": 30,
+                "nameTextStyle": {
+                  "color": f'{track_color}'
+                },
                 "axisLabel": {
                     "textStyle": {
                         "color": f'{track_color}',
@@ -274,6 +280,12 @@ def main():
                 "xAxis": {
                     "type": "category",
                     "data": months,
+                    "name": "月份",
+                    "nameLocation": "center",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                      "color": f'{track_color}'
+                    },
                     "axisLabel": {
                         "textStyle": {
                             "color": f'{track_color}',
@@ -362,6 +374,12 @@ def main():
                 "xAxis": {
                     "type": "category",
                     "data": year_stats[key]['run_time'],
+                    "name": "日期",
+                    "nameLocation": "center",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                      "color": f'{track_color}'
+                    },
                     "axisLabel": {
                         "textStyle": {
                             "color": f'{track_color}',
