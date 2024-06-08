@@ -330,6 +330,7 @@ def main():
             f.write(json.dumps(echart_option, ensure_ascii=False, indent=2))
             f.write("\n")
             f.write("```\n")
+            f.write("\n")
 
             # 心率chart
             f.write("```echarts {height=300}\n")
@@ -346,6 +347,16 @@ def main():
                             "color": f'{track_color}',
                         },
                     },
+                    "axisTick": {
+                        "lineStyle": {
+                            "color": f'{track_color}'
+                        }
+                    },
+                    "axisLine": {
+                        "lineStyle": {
+                            "color": f'{track_color}'
+                        }
+                    }
                 },
                 "yAxis": {
                     "name": "平均心率(bpm)",
