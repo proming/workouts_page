@@ -171,6 +171,16 @@ def main():
                         "color": f'{track_color}',
                     },
                 },
+                "axisTick": {
+                    "lineStyle": {
+                        "color": f'{track_color}'
+                    }
+                },
+                "axisLine": {
+                    "lineStyle": {
+                        "color": f'{track_color}'
+                    }
+                }
             },
             "yAxis": [
                 {
@@ -269,6 +279,16 @@ def main():
                             "color": f'{track_color}',
                         },
                     },
+                    "axisTick": {
+                        "lineStyle": {
+                            "color": f'{track_color}'
+                        }
+                    },
+                    "axisLine": {
+                        "lineStyle": {
+                            "color": f'{track_color}'
+                        }
+                    }
                 },
                 "yAxis": [
                     {
