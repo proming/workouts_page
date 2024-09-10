@@ -146,3 +146,26 @@ def speed_to_pace(speed):
 
     # 格式化输出
     return f"{minutes}:{seconds:02d}"
+
+
+def format_duration(seconds):
+    # 计算天数
+    days = seconds // 86400
+    seconds %= 86400
+
+    # 计算小时数
+    hours = seconds // 3600
+    seconds %= 3600
+
+    # 计算分钟数
+    minutes = seconds // 60
+
+    # 剩余的秒数
+    seconds %= 60
+
+    # 格式化输出
+    if days > 0:
+        return f"{days}d {hours}:{minutes:02d}:{seconds:02d}"
+    else:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+
