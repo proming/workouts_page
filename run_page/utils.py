@@ -134,3 +134,15 @@ def get_time_delta(start_time, end_time):
     minutes = int((total_seconds % 3600) // 60)
     seconds = int(total_seconds % 60)
     return ("" if hours == 0 else f"{hours}:") + f"{minutes:02d}:" + f"{seconds:02d}"
+
+
+def speed_to_pace(speed):
+    # 计算每公里所需的分钟数
+    pace_min_per_km = 60 / speed
+
+    # 将分钟的小数部分转换为秒钟
+    minutes = int(pace_min_per_km)
+    seconds = int((pace_min_per_km - minutes) * 60)
+
+    # 格式化输出
+    return f"{minutes}:{seconds:02d}"

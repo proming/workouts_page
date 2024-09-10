@@ -409,7 +409,7 @@ def main():
                 f.write(f"**时间：** {track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')}  \n")
                 f.write(f"**距离：** {track.length/1000:.2f} km  \n")
                 f.write(f"**时长：** {utils.get_time_delta(track.start_time, track.end_time)}  \n")
-                f.write(f"**配速：** {track.average_speed * 3.6:.2f} km/h  \n")
+                f.write(f"**配速：** {utils.speed_to_pace(track.average_speed * 3.6)} / km  \n")
                 f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
                 f.write(f"![{file_name}](/assets/{file_name}.svg)\n")
 

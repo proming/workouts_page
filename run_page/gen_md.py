@@ -5,6 +5,7 @@ from datetime import datetime
 
 import svgwrite
 
+import utils
 from config import SQL_FILE
 from gpxtrackposter import track_loader
 from gpxtrackposter.exceptions import ParameterError
@@ -146,6 +147,7 @@ def main():
         f.write(f"跑步距离: {total_stats['distance']:.2f} km  \n")
         f.write(f"平均距离: {total_stats['distance']/total_stats['runs']:.2f} km  \n")
         f.write(f"平均心率: {total_stats['average_heartrate']:.0f} bpm  \n")
+        f.write(f"平均配速: {utils.speed_to_pace(total_stats['distance'] * 3600 / total_stats['moving_time'])} / km  \n")
         generate_year_stat_svg(None, year_stats, args.blog_dir)
         # f.write(f"![run-stats](/assets/run-stats.svg)\n")
         years = []
@@ -258,6 +260,7 @@ def main():
             f.write(f"跑步距离: {year_stats[key]['distance']:.2f} km  \n")
             f.write(f"平均距离: {year_stats[key]['distance']/year_stats[key]['runs']:.2f} km  \n")
             f.write(f"平均心率: {year_stats[key]['average_heartrate']:.0f} bpm  \n")
+            f.write(f"平均配速: {utils.speed_to_pace(year_stats[key]['distance'] * 3600 / year_stats[key]['moving_time'])} / km  \n")
 
             generate_year_stat_svg(key, month_stats[key], args.blog_dir)
             # f.write(f"![stat-{key}](/assets/stat-{key}.svg)\n")
@@ -455,7 +458,8 @@ def add_year_stats(year_stat, track):
                            'sum_heartrate': track.average_heartrate,
                            'average_heartrate': track.average_heartrate,
                            'run_time': [track.start_time_local.strftime('%m-%d')],
-                           'run_heartrate': [track.average_heartrate]
+                           'run_heartrate': [track.average_heartrate],
+                           'moving_time': int(track.end_time.timestamp() - track.start_time.timestamp())
                            }
     else:
         year_stat[year]['run_time'].append(track.start_time_local.strftime('%m-%d'))
@@ -467,7 +471,8 @@ def add_year_stats(year_stat, track):
             'sum_heartrate': year_stat[year]['sum_heartrate'] + track.average_heartrate,
             'average_heartrate': (year_stat[year]['sum_heartrate'] + track.average_heartrate) / (year_stat[year]['runs'] + 1),
             'run_time': year_stat[year]['run_time'],
-            'run_heartrate': year_stat[year]['run_heartrate']
+            'run_heartrate': year_stat[year]['run_heartrate'],
+            'moving_time': year_stat[year]['moving_time'] + int(track.end_time.timestamp() - track.start_time.timestamp())
         }
 
     return year_stat
@@ -478,11 +483,13 @@ def add_total_stats(total_stat, track):
         total_stat['distance'] = track.length / 1000
         total_stat['sum_heartrate'] = track.average_heartrate
         total_stat['average_heartrate'] = track.average_heartrate
+        total_stat['moving_time'] = int(track.end_time.timestamp() - track.start_time.timestamp())
     else:
         total_stat['runs'] += 1
         total_stat['distance'] += track.length / 1000
         total_stat['sum_heartrate'] += track.average_heartrate
         total_stat['average_heartrate'] = total_stat['sum_heartrate'] / total_stat['runs']
+        total_stat['moving_time'] += int(track.end_time.timestamp() - track.start_time.timestamp())
 
     return total_stat
 
