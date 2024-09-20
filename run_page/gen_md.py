@@ -281,61 +281,61 @@ def main():
             # 跑步日历chart
             f.write("```echarts {height=300}\n")
             echart_option = """{
-              "tooltip": {
-                "triggerOn": "click",
-                "enterable": true,
-                "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[2] + '/\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) +\\n            'km '\\n          );\\n        }\\n      }"
-              },
-              "visualMap": {
-                "show": false,
-                "type": "piecewise",
-                "calculable": true,
-                "dimension": 1,
-                "backgroundColor": "transparent",
-                "pieces": [
-                  { "gte": 15, "color": """ + f'"{special_color2}"' + """ },
-                  { "gte": 10, "lt": 15, "color": """ + f'"{special_color}"' + """ },
-                  { "gte": 3, "lt": 10, "color": """ + f'"{track_color}"' + """ },
-                  { "lt": 3, "color": "transparent" }
-                ]
-              },
-              "calendar": {
-                "range": """ + f'"{str(key)}"' + """,
-                "left": 10,
-                "right": 10,
-                "width": 700,
-                "yearLabel": {
-                  "show": false
-                },
-                "dayLabel": {
-                  "show": false
-                },
-                "monthLabel": {
-                  "color": """ + f'"{track_color}"' + """,
-                  "nameMap": "ZH"
-                },
-                "splitLine": {
-                  "lineStyle": {
-                    "color": "transparent"
-                  }
-                },
-                "itemStyle": {
-                  "borderColor": "transparent",
-                  "borderWidth": 0.5
-                }
-              },
-              "series": {
-                "type": "heatmap",
-                "coordinateSystem": "calendar",
-                "data": """ + json.dumps(date_array) + """,
-                "emphasis": {
-                  "itemStyle": {
-                    "shadowBlur": 10,
-                    "shadowColor": "rgba(0, 0, 0, 0.5)"
-                  }
-                }
-              }
-            }"""
+  "tooltip": {
+    "triggerOn": "click",
+    "enterable": true,
+    "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[2] + '/\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) +\\n            'km '\\n          );\\n        }\\n      }"
+  },
+  "visualMap": {
+    "show": false,
+    "type": "piecewise",
+    "calculable": true,
+    "dimension": 1,
+    "backgroundColor": "transparent",
+    "pieces": [
+      { "gte": 15, "color": """ + f'"{special_color2}"' + """ },
+      { "gte": 10, "lt": 15, "color": """ + f'"{special_color}"' + """ },
+      { "gte": 3, "lt": 10, "color": """ + f'"{track_color}"' + """ },
+      { "lt": 3, "color": "transparent" }
+    ]
+  },
+  "calendar": {
+    "range": """ + f'"{str(key)}"' + """,
+    "left": 10,
+    "right": 10,
+    "width": 700,
+    "yearLabel": {
+      "show": false
+    },
+    "dayLabel": {
+      "show": false
+    },
+    "monthLabel": {
+      "color": """ + f'"{track_color}"' + """,
+      "nameMap": "ZH"
+    },
+    "splitLine": {
+      "lineStyle": {
+        "color": "transparent"
+      }
+    },
+    "itemStyle": {
+      "borderColor": "transparent",
+      "borderWidth": 0.5
+    }
+  },
+  "series": {
+    "type": "heatmap",
+    "coordinateSystem": "calendar",
+    "data": """ + json.dumps(date_array) + """,
+    "emphasis": {
+      "itemStyle": {
+        "shadowBlur": 10,
+        "shadowColor": "rgba(0, 0, 0, 0.5)"
+      }
+    }
+  }
+}"""
             f.write(echart_option)
             f.write("\n")
             f.write("```\n")
