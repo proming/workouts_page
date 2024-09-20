@@ -303,7 +303,7 @@ def main():
     "range": """ + f'"{str(key)}"' + """,
     "left": 10,
     "right": 10,
-    "width": 700,
+    "cellSize": "auto",
     "yearLabel": {
       "show": false
     },
