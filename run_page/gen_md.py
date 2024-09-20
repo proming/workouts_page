@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime
+import datetime as dt
 
 import svgwrite
 
@@ -149,7 +150,7 @@ def main():
         f.write(f"平均距离: {total_stats['distance']/total_stats['runs']:.2f} km  \n")
         f.write(f"平均心率: {total_stats['average_heartrate']:.0f} bpm  \n")
         f.write(f"平均配速: {utils.speed_to_pace(total_stats['distance'] * 3600 / total_stats['moving_time'])} / km  \n")
-        generate_year_stat_svg(None, year_stats, args.blog_dir)
+        # generate_year_stat_svg(None, year_stats, args.blog_dir)
         # f.write(f"![run-stats](/assets/run-stats.svg)\n")
         years = []
         distances = []
@@ -264,7 +265,7 @@ def main():
             f.write(f"平均心率: {year_stats[key]['average_heartrate']:.0f} bpm  \n")
             f.write(f"平均配速: {utils.speed_to_pace(year_stats[key]['distance'] * 3600 / year_stats[key]['moving_time'])} / km  \n")
 
-            generate_year_stat_svg(key, month_stats[key], args.blog_dir)
+            # generate_year_stat_svg(key, month_stats[key], args.blog_dir)
             # f.write(f"![stat-{key}](/assets/stat-{key}.svg)\n")
             # 月度统计chart
             months = []
@@ -275,6 +276,70 @@ def main():
                 months.append(month)
                 distances.append(round(values["distance"], 2))
                 heartrates.append(round(values["average_heartrate"], 0))
+
+            date_array, run_ids = gen_day_echart(key, tracks)
+            # 跑步日历chart
+            f.write("```echarts {height=300}\n")
+            echart_option = """{
+              "tooltip": {
+                "triggerOn": "click",
+                "enterable": true,
+                "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[2] + '/\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) +\\n            'km '\\n          );\\n        }\\n      }"
+              },
+              "visualMap": {
+                "show": false,
+                "type": "piecewise",
+                "calculable": true,
+                "dimension": 1,
+                "backgroundColor": "transparent",
+                "pieces": [
+                  { "gte": 15, "color": """ + f'"{special_color2}"' + """ },
+                  { "gte": 10, "lt": 15, "color": """ + f'"{special_color}"' + """ },
+                  { "gte": 3, "lt": 10, "color": """ + f'"{track_color}"' + """ },
+                  { "lt": 3, "color": "transparent" }
+                ]
+              },
+              "calendar": {
+                "range": """ + f'"{str(key)}"' + """,
+                "left": 10,
+                "right": 10,
+                "width": 700,
+                "yearLabel": {
+                  "show": false
+                },
+                "dayLabel": {
+                  "show": false
+                },
+                "monthLabel": {
+                  "color": """ + f'"{track_color}"' + """,
+                  "nameMap": "ZH"
+                },
+                "splitLine": {
+                  "lineStyle": {
+                    "color": "transparent"
+                  }
+                },
+                "itemStyle": {
+                  "borderColor": "transparent",
+                  "borderWidth": 0.5
+                }
+              },
+              "series": {
+                "type": "heatmap",
+                "coordinateSystem": "calendar",
+                "data": """ + json.dumps(date_array) + """,
+                "emphasis": {
+                  "itemStyle": {
+                    "shadowBlur": 10,
+                    "shadowColor": "rgba(0, 0, 0, 0.5)"
+                  }
+                }
+              }
+            }"""
+            f.write(echart_option)
+            f.write("\n")
+            f.write("```\n")
+            f.write("\n")
 
             f.write("```echarts {height=300}\n")
             echart_option = {
@@ -432,23 +497,48 @@ def main():
             f.write(json.dumps(echart_option, ensure_ascii=False, indent=2))
             f.write("\n")
             f.write("```\n")
-            f.write(f"\n")
-            f.write("| 1月 | 2月 | 3月 | 4月 | 5月 | 6月 |\n")
-            f.write("| :-: | :-: | :-: | :-: | :-: | :-: |\n")
-            f.write(f"| {get_day_stat_detail(key, 1, day_stats)} |"
-                    f" {get_day_stat_detail(key, 2, day_stats)} |"
-                    f" {get_day_stat_detail(key, 3, day_stats)} |"
-                    f" {get_day_stat_detail(key, 4, day_stats)} |"
-                    f" {get_day_stat_detail(key, 5, day_stats)} |"
-                    f" {get_day_stat_detail(key, 6, day_stats)} |\n")
-            f.write("| **7月** | **8月** | **9月** | **10月** | **11月** | **12月** |\n")
-            f.write(f"| {get_day_stat_detail(key, 7, day_stats)} |"
-                    f" {get_day_stat_detail(key, 8, day_stats)} |"
-                    f" {get_day_stat_detail(key, 9, day_stats)} |"
-                    f" {get_day_stat_detail(key, 10, day_stats)} |"
-                    f" {get_day_stat_detail(key, 11, day_stats)} |"
-                    f" {get_day_stat_detail(key, 12, day_stats)} |\n")
-            f.write(f"\n")
+            f.write("\n")
+
+            # f.write("| 1月 | 2月 | 3月 | 4月 | 5月 | 6月 |\n")
+            # f.write("| :-: | :-: | :-: | :-: | :-: | :-: |\n")
+            # f.write(f"| {get_day_stat_detail(key, 1, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 2, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 3, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 4, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 5, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 6, day_stats)} |\n")
+            # f.write("| **7月** | **8月** | **9月** | **10月** | **11月** | **12月** |\n")
+            # f.write(f"| {get_day_stat_detail(key, 7, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 8, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 9, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 10, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 11, day_stats)} |"
+            #         f" {get_day_stat_detail(key, 12, day_stats)} |\n")
+            # f.write(f"\n")
+
+
+def gen_day_echart(year, tracks):
+    date_array = []
+    run_ids = {}
+    # 确定这一年的开始和结束日期
+    start_date = dt.date(year, 1, 1)
+    end_date = dt.date(year, 12, 31)
+    current_date = start_date
+    while current_date <= end_date:
+        date_array.append([current_date.strftime('%Y-%m-%d'), 0, ''])
+        current_date += dt.timedelta(days=1)
+
+    for track in tracks:
+        day = track.start_time_local.strftime('%Y-%m-%d')
+        distance = track.length / 1000
+        for record in date_array:
+            if record[0] == day:
+                record[1] += distance
+                record[2] = track.start_time_local.strftime("%Y%m%d") + "_" + str(track.run_id)
+
+        run_ids[day] = track.start_time_local.strftime("%Y%m%d") + "_" + str(track.run_id)
+
+    return date_array, run_ids
 
 
 def add_year_stats(year_stat, track):
