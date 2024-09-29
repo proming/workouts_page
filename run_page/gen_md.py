@@ -320,6 +320,7 @@ def main():
       }
     },
     "itemStyle": {
+      "color": "transparent",
       "borderColor": "transparent",
       "borderWidth": 0.5
     }
