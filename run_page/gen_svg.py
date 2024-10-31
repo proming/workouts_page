@@ -382,8 +382,8 @@ def main():
         for track in tracks:
             # t = Track()
             # t.load_fit("FIT_OUT/251304010.fit")
-            # if track.run_id in generated_activity:
-            #     continue
+            if track.run_id in generated_activity:
+                continue
 
             if track.polylines is None or len(track.polylines) == 0 or len(track.polylines[0]) == 0:
                 continue
@@ -422,8 +422,8 @@ def main():
                 f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
                 f.write(f"![{file_name}](/assets/run_{year}/{file_name}.svg)\n")
 
-        #     generated_activity.append(track.run_id)
-        # save_generated_activity_list(generated_activity)
+            generated_activity.append(track.run_id)
+        save_generated_activity_list(generated_activity)
     else:
         p.draw(drawers[args.type], args.output)
         from cairosvg import svg2png
