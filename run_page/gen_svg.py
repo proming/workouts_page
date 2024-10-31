@@ -392,7 +392,7 @@ def main():
             # file_name = str(track.run_id)
 
             year = track.start_time_local.year
-            directory = os.path.dirname(os.path.join(f"{args.blog_dir}/../../../assets", f"run_{year}"))
+            directory = os.path.join(f"{args.blog_dir}/../../../assets", f"run_{year}")
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
@@ -402,7 +402,7 @@ def main():
             p.set_tracks([track])
             p.draw(drawers[args.type], os.path.join(directory, f"{file_name}.svg"))
 
-            directory = os.path.dirname(os.path.join(f"{args.blog_dir}/run", f"{year}"))
+            directory = os.path.join(f"{args.blog_dir}/run", f"{year}")
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
