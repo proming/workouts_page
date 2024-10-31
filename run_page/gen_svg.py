@@ -406,7 +406,7 @@ def main():
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
-            with open(os.path.join(f"{args.blog_dir}/run", f"{file_name}.md"), "w") as f:
+            with open(os.path.join(f"{args.blog_dir}/run/{year}", f"{file_name}.md"), "w") as f:
                 f.write(f"---\n")
                 # f.write(f"layout: post\n")
                 f.write(f"title: {track.start_time_local.strftime('%Y-%m-%d')} 跑步日记\n")
