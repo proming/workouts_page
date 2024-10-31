@@ -382,8 +382,8 @@ def main():
         for track in tracks:
             # t = Track()
             # t.load_fit("FIT_OUT/251304010.fit")
-            if track.run_id in generated_activity:
-                continue
+            # if track.run_id in generated_activity:
+            #     continue
 
             if track.polylines is None or len(track.polylines) == 0 or len(track.polylines[0]) == 0:
                 continue
@@ -391,11 +391,20 @@ def main():
             file_name = track.start_time_local.strftime("%Y%m%d") + "_" + str(track.run_id)
             # file_name = str(track.run_id)
 
+            year = track.start_time_local.year
+            directory = os.path.dirname(os.path.join(f"{args.blog_dir}/../../../assets", f"run_{year}"))
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
             p.width = 120
             p.height = 190
             p.drawer_type = "plain"
             p.set_tracks([track])
-            p.draw(drawers[args.type], os.path.join(f"{args.blog_dir}/../../../assets", f"{file_name}.svg"))
+            p.draw(drawers[args.type], os.path.join(directory, f"{file_name}.svg"))
+
+            directory = os.path.dirname(os.path.join(f"{args.blog_dir}/run", f"{year}"))
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
             with open(os.path.join(f"{args.blog_dir}/run", f"{file_name}.md"), "w") as f:
                 f.write(f"---\n")
@@ -411,10 +420,10 @@ def main():
                 f.write(f"**时长：** {utils.get_time_delta(track.start_time, track.end_time)}  \n")
                 f.write(f"**配速：** {utils.speed_to_pace(track.average_speed * 3.6)} / km  \n")
                 f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
-                f.write(f"![{file_name}](/assets/{file_name}.svg)\n")
+                f.write(f"![{file_name}](/assets/run_{year}/{file_name}.svg)\n")
 
-            generated_activity.append(track.run_id)
-        save_generated_activity_list(generated_activity)
+        #     generated_activity.append(track.run_id)
+        # save_generated_activity_list(generated_activity)
     else:
         p.draw(drawers[args.type], args.output)
         from cairosvg import svg2png

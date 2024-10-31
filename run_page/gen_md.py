@@ -284,7 +284,7 @@ def main():
   "tooltip": {
     "triggerOn": "click",
     "enterable": true,
-    "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[2] + '/\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) +\\n            'km '\\n          );\\n        }\\n      }"
+    "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[0].slice(0, 4) + '/' + params.value[2] + '/\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) +\\n            'km '\\n          );\\n        }\\n      }"
   },
   "visualMap": {
     "show": false,
@@ -790,9 +790,9 @@ def get_day_stat_detail(year, month, day_stats, blog_dir="."):
         start_time = stat['start_time']
         file_name = start_time.strftime("%Y%m%d") + "_" + str(run_id)
         if day_stat_detail == "":
-            day_stat_detail = f"[{day}({distance:.2f} km)]({file_name}.md)"
+            day_stat_detail = f"[{day}({distance:.2f} km)]({year}/{file_name}.md)"
         else:
-            day_stat_detail += f"<br>[{day}({distance:.2f} km)]({file_name}.md)"
+            day_stat_detail += f"<br>[{day}({distance:.2f} km)]({year}/{file_name}.md)"
 
     return day_stat_detail
 
