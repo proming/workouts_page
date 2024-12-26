@@ -1,5 +1,7 @@
 import argparse
+import calendar
 import datetime
+import json
 import logging
 import os
 import sys
@@ -240,6 +242,10 @@ def main():
         drawer.create_args(args_parser)
 
     args = args_parser.parse_args()
+    global track_color, special_color, special_color2
+    track_color = args.track_color
+    special_color = args.special_color
+    special_color2 = args.special_color2
 
     for _, drawer in drawers.items():
         drawer.fetch_args(args)
@@ -406,21 +412,10 @@ def main():
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
-            with open(os.path.join(f"{args.blog_dir}/run/{year}", f"{file_name}.md"), "w") as f:
-                f.write(f"---\n")
-                # f.write(f"layout: post\n")
-                f.write(f"title: {track.start_time_local.strftime('%Y-%m-%d')} 跑步日记\n")
-                f.write(f"created: {track.start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
-                f.write(f"date: {track.start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
-                f.write(f"author: Jogger\n")
-                f.write(f"tags: [跑步]\n")
-                f.write(f"---\n")
-                f.write(f"**时间：** {track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')}  \n")
-                f.write(f"**距离：** {track.length/1000:.2f} km  \n")
-                f.write(f"**时长：** {utils.get_time_delta(track.start_time, track.end_time)}  \n")
-                f.write(f"**配速：** {utils.speed_to_pace(track.average_speed * 3.6)} / km  \n")
-                f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
-                f.write(f"![{file_name}](/assets/run_{year}/{file_name}.svg)\n")
+            month_tracks = get_tracks_by_month(tracks, year, track.start_time_local.month)
+            generate_month_page(month_tracks, year, track.start_time_local.month, args.blog_dir)
+
+            # generate_track_page(args, file_name, track, year)
 
             generated_activity.append(track.run_id)
         save_generated_activity_list(generated_activity)
@@ -428,6 +423,263 @@ def main():
         p.draw(drawers[args.type], args.output)
         from cairosvg import svg2png
         svg2png(url=args.output, write_to=args.output.replace('svg', 'png'))
+
+
+def generate_track_page(args, file_name, track, year):
+    with open(os.path.join(f"{args.blog_dir}/run/{year}", f"{file_name}.md"), "w") as f:
+        f.write(f"---\n")
+        # f.write(f"layout: post\n")
+        f.write(f"title: {track.start_time_local.strftime('%Y-%m-%d')} 跑步日记\n")
+        f.write(f"created: {track.start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+        f.write(f"date: {track.start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+        f.write(f"author: Jogger\n")
+        f.write(f"tags: [跑步]\n")
+        f.write(f"---\n")
+        f.write(f"**时间：** {track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')}  \n")
+        f.write(f"**距离：** {track.length / 1000:.2f} km  \n")
+        f.write(f"**时长：** {utils.get_time_delta(track.start_time, track.end_time)}  \n")
+        f.write(f"**配速：** {utils.speed_to_pace(track.average_speed * 3.6)} / km  \n")
+        f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
+        f.write(f"![{file_name}](/assets/run_{year}/{file_name}.svg)\n")
+
+
+def get_tracks_by_month(tracks, year, month):
+    month_tracks = []
+    for track in tracks:
+        if track.start_time_local.year == year and track.start_time_local.month == month:
+            month_tracks.append(track)
+
+    return month_tracks
+
+
+def generate_month_page(tracks, year, month, blog_dir):
+    if len(tracks) == 0:
+        return
+
+    month_stats = {}
+    for t in tracks:
+        month_stats = add_month_stats(month_stats, t)
+
+    with open(os.path.join(f"{blog_dir}/run/{year}", f"{year}-{month:02d}.md"), "w") as f:
+        f.write(f"---\n")
+        f.write(f"title: {year}-{month:02d} 跑步日记\n")
+        f.write(f"created: {tracks[0].start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+        f.write(f"date: {tracks[-1].start_time_local.strftime('%Y-%m-%dT%H:%M:%S+08:00')}\n")
+        f.write(f"author: Jogger\n")
+        f.write(f"tags: [跑步]\n")
+        f.write(f"---\n")
+        f.write(f"## {year}-{month:02d}\n")
+        f.write(f"运动次数: {month_stats[year][month]['runs']}  \n")
+        f.write(f"运动距离: {month_stats[year][month]['distance']:.2f} km  \n")
+        f.write(f"运动时长: {utils.format_duration(month_stats[year][month]['moving_time'])}  \n")
+        f.write(f"平均距离: {month_stats[year][month]['distance'] / month_stats[year][month]['runs']:.2f} km  \n")
+        f.write(f"平均心率: {month_stats[year][month]['average_heartrate']:.0f} bpm  \n")
+        f.write(
+            f"平均配速: {utils.speed_to_pace(month_stats[year][month]['distance'] * 3600 / month_stats[year][month]['moving_time'])} / km  \n")
+
+        days = generate_days(year, month)
+        days_distance, days_heartrate = get_days_distance(tracks, days)
+
+        f.write("```echarts {height=300}\n")
+        echart_option = {
+            "tooltip": {
+                "trigger": "axis",
+                "triggerOn": "click",
+                "enterable": True,
+                "show": True,
+                "formatter": "function (params) {\n      if (params[0].data == '-') return '';\n      return '<a href=\"#" + f"{year}-{month:02d}-" + "' + params[0].name.padStart(2, '0') + '\">' +\n        '" + f"{year}-{month:02d}-" + "' + params[0].name.padStart(2, '0') + '</a> <br>' +\n        params[0].seriesName + ': ' + params[0].data + '<br>' +\n        params[1].seriesName + ': ' + params[1].data;\n    }"
+            },
+            "xAxis": {
+                "type": "category",
+                "data": days,
+                "name": "日期",
+                "nameLocation": "center",
+                "nameGap": 30,
+                "nameTextStyle": {
+                    "color": f'{track_color}'
+                },
+                "axisLabel": {
+                    "textStyle": {
+                        "color": f'{track_color}'
+                    }
+                },
+                "axisTick": {
+                    "lineStyle": {
+                        "color": f'{track_color}'
+                    }
+                },
+                "axisLine": {
+                    "lineStyle": {
+                        "color": f'{track_color}'
+                    }
+                }
+            },
+            "yAxis": [
+                {
+                    "name": "跑步距离(km)",
+                    "type": "value",
+                    "scale": True,
+                    "splitLine": False,
+                    "nameLocation": "center",
+                    "nameRotate": "90",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                        "color": f'{track_color}'
+                    },
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f'{track_color}'
+                        }
+                    }
+                },
+                {
+                    "name": "平均心率(bpm)",
+                    "type": "value",
+                    "scale": True,
+                    "splitLine": False,
+                    "nameLocation": "center",
+                    "nameRotate": "90",
+                    "nameGap": 30,
+                    "nameTextStyle": {
+                        "color": f"{special_color2}"
+                    },
+                    "axisLabel": {
+                        "textStyle": {
+                            "color": f"{special_color2}"
+                        }
+                    }
+                }
+            ],
+            "series": [
+                {
+                    "name": "跑步距离(km)",
+                    "data": days_distance,
+                    "itemStyle": {
+                        "color": f'{track_color}'
+                    },
+                    "yAxisIndex": 0,
+                    "type": "bar",
+                    "markLine": {
+                        "data": [
+                            {
+                                "type": "average",
+                                "name": "平均值"
+                            }
+                        ],
+                        "symbol": [
+                            "none",
+                            "none"
+                        ],
+                        "position": "insideTopCenter",
+                        "itemStyle": {
+                            "normal": {
+                                "lineStyle": {
+                                    "type": "dashed",
+                                    "color": f'{track_color}'
+                                },
+                                "label": {
+                                    "show": True,
+                                    "position": "start",
+                                    "color": f'{track_color}'
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "平均心率(bpm)",
+                    "data": days_heartrate,
+                    "connectNulls": True,
+                    "itemStyle": {
+                        "color": f"{special_color2}"
+                    },
+                    "yAxisIndex": 1,
+                    "type": "line"
+                }
+            ]
+        }
+        f.write(json.dumps(echart_option, ensure_ascii=False, indent=2))
+        f.write("\n")
+        f.write("```\n")
+
+        for track in tracks:
+            svg_name = track.start_time_local.strftime("%Y%m%d") + "_" + str(track.run_id)
+            f.write(f"\n")
+            f.write(f"---\n")
+            f.write(f"## {year}-{month:02d}-{track.start_time_local.day:02d}\n")
+            f.write(f"**时间：** {track.start_time_local.strftime('%Y-%m-%d %H:%M:%S')}  \n")
+            f.write(f"**距离：** {track.length / 1000:.2f} km  \n")
+            f.write(f"**时长：** {utils.get_time_delta(track.start_time, track.end_time)}  \n")
+            f.write(f"**配速：** {utils.speed_to_pace(track.average_speed * 3.6)} / km  \n")
+            f.write(f"**心率：** {int(track.average_heartrate)} bpm  \n")
+            f.write(f"![{svg_name}](/assets/run_{year}/{svg_name}.svg)\n")
+
+
+def add_month_stats(month_stat, track):
+    year = track.start_time_local.year
+    month = track.start_time_local.month
+
+    if year not in month_stat:
+        month_stat[year] = {
+            month: {
+                'runs': 1,
+                'distance': track.length / 1000,
+                'average_heartrate': track.average_heartrate,
+                'sum_heartrate': track.average_heartrate,
+                'moving_time': int(track.end_time.timestamp() - track.start_time.timestamp())
+            }
+        }
+    else:
+        if month not in month_stat[year]:
+            month_stat[year][month] = {
+                'runs': 1, 'distance': track.length / 1000,
+                'average_heartrate': track.average_heartrate,
+                'sum_heartrate': track.average_heartrate,
+                'moving_time': int(track.end_time.timestamp() - track.start_time.timestamp())
+            }
+        else:
+            month_stat[year][month] = {
+                'runs': month_stat[year][month]['runs'] + 1,
+                'distance': month_stat[year][month]['distance'] + track.length / 1000,
+                'average_heartrate': (month_stat[year][month]['sum_heartrate'] + track.average_heartrate) / (month_stat[year][month]['runs'] + 1),
+                'sum_heartrate': month_stat[year][month]['sum_heartrate'] + track.average_heartrate,
+                'moving_time': month_stat[year][month]['moving_time'] + int(track.end_time.timestamp() - track.start_time.timestamp())
+            }
+
+    return month_stat
+
+
+def generate_days(year, month):
+    # 获取指定年月的天数
+    _, num_days = calendar.monthrange(year, month)
+    # 生成日期数字数组
+    days = list(range(1, num_days + 1))
+    return days
+
+
+def get_days_distance(tracks, days):
+    days_distance = [0 for day in days]
+    days_heartrate = [0 for day in days]
+    runs = [0 for day in days]
+    for track in tracks:
+        day = track.start_time_local.day
+        days_distance[day - 1] += track.length / 1000
+        days_heartrate[day - 1] += track.average_heartrate
+        runs[day - 1] += 1
+
+    for index, value in enumerate(days_distance):
+        if value == 0:
+            days_distance[index] = '-'
+        else:
+            days_distance[index] = round(value, 2)
+
+    for index, value in enumerate(days_heartrate):
+        if value == 0:
+            days_heartrate[index] = '-'
+        else:
+            days_heartrate[index] = value / runs[index]
+
+    return days_distance, days_heartrate
 
 
 if __name__ == "__main__":

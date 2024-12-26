@@ -165,7 +165,10 @@ def main():
         echart_option = {
             "tooltip": {
                 "trigger": 'axis',
-                "show": True
+                "show": True,
+                "triggerOn": "click",
+                "enterable": True,
+                "formatter": "function (params) {\n      if (params[0].data == '-') return '';\n      return '<a href=\"#' + params[0].name + '\">' +\n      params[0].name + '</a> <br>' +\n      params[0].seriesName + ': ' + params[0].data + '<br>' +\n      params[1].seriesName + ': ' + params[1].data;\n    }"
             },
             "xAxis": {
                 "type": "category",
@@ -236,7 +239,33 @@ def main():
                         "color": f"{track_color}"
                     },
                     "yAxisIndex": 0,
-                    "type": "bar"
+                    "type": "bar",
+                    "markLine": {
+                        "data": [
+                            {
+                                "type": "average",
+                                "name": "平均值"
+                            }
+                        ],
+                        "symbol": [
+                            "none",
+                            "none"
+                        ],
+                        "position": "insideTopCenter",
+                        "itemStyle": {
+                            "normal": {
+                                "lineStyle": {
+                                    "type": "dashed",
+                                    "color": f'{track_color}'
+                                },
+                                "label": {
+                                    "show": True,
+                                    "position": "start",
+                                    "color": f'{special_color2}'
+                                }
+                            }
+                        }
+                    }
                 },
                 {
                     "name": '平均心率(bpm)',
@@ -268,14 +297,27 @@ def main():
             # generate_year_stat_svg(key, month_stats[key], args.blog_dir)
             # f.write(f"![stat-{key}](/assets/stat-{key}.svg)\n")
             # 月度统计chart
-            months = []
-            distances = []
-            heartrates = []
+
+            months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            distances = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            heartrates = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             # 遍历解析后的数据并填充数组
             for month, values in month_stats[key].items():
-                months.append(month)
-                distances.append(round(values["distance"], 2))
-                heartrates.append(round(values["average_heartrate"], 0))
+                # months.append(month)
+                distances[month - 1] += round(values["distance"], 2)
+                heartrates[month - 1] += round(values["average_heartrate"], 0)
+
+            for index, value in enumerate(distances):
+                if value == 0:
+                    distances[index] = '-'
+                else:
+                    distances[index] = round(value, 2)
+
+            for index, value in enumerate(heartrates):
+                if value == 0:
+                    heartrates[index] = '-'
+                else:
+                    heartrates[index] = round(value, 2)
 
             date_array, run_ids = gen_day_echart(key, tracks)
             # 跑步日历chart
@@ -284,7 +326,7 @@ def main():
   "tooltip": {
     "triggerOn": "click",
     "enterable": true,
-    "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[0].slice(0, 4) + '/' + params.value[2] + '/\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) +\\n            'km '\\n          );\\n        }\\n      }"
+    "formatter":"function (params) {\\n        if (params.value[1] <= 3) {\\n          return '';\\n        } else {\\n          return (\\n            '<a href=\\"/posts/run/' + params.value[0].slice(0, 4) + '/' + params.value[0].slice(0, 7) + '/#' + params.value[0] +'\\" target=\\"_blank\\">' +\\n            params.value[0].slice(-5) +\\n            '</a> <br>' +\\n            Number(params.value[1]).toFixed(2) + 'km '\\n          );\\n        }\\n      }"
   },
   "visualMap": {
     "show": false,
@@ -346,7 +388,10 @@ def main():
             echart_option = {
                 "tooltip": {
                     "trigger": 'axis',
-                    "show": True
+                    "show": True,
+                    "triggerOn": "click",
+                    "enterable": True,
+                    "formatter": "function (params) {\n      var year = '" + f"{key}" +"';\n      var month = year + '-' + params[0].name.padStart(2, '0');\n      if (params[0].data == '-') return '';\n      return '<a href=\"/posts/run/'+ year +'/' + month + '/\" target=\"_blank\">' +\n      month + '</a> <br>' +\n      params[0].seriesName + ': ' + params[0].data + '<br>' +\n      params[1].seriesName + ': ' + params[1].data;\n    }"
                 },
                 "xAxis": {
                     "type": "category",
@@ -417,11 +462,38 @@ def main():
                             "color": f"{track_color}"
                         },
                         "yAxisIndex": 0,
-                        "type": "bar"
+                        "type": "bar",
+                        "markLine": {
+                            "data": [
+                                {
+                                    "type": "average",
+                                    "name": "平均值"
+                                }
+                            ],
+                            "symbol": [
+                                "none",
+                                "none"
+                            ],
+                            "position": "insideTopCenter",
+                            "itemStyle": {
+                                "normal": {
+                                    "lineStyle": {
+                                        "type": "dashed",
+                                        "color": f'{track_color}'
+                                    },
+                                    "label": {
+                                        "show": True,
+                                        "position": "start",
+                                        "color": f'{special_color2}'
+                                    }
+                                }
+                            }
+                        }
                     },
                     {
                         "name": '平均心率(bpm)',
                         "data": heartrates,
+                        "connectNulls": True,
                         "itemStyle": {
                             "color": f"{special_color2}"
                         },
@@ -440,7 +512,10 @@ def main():
             echart_option = {
                 "tooltip": {
                     "trigger": 'axis',
-                    "show": True
+                    "show": True,
+                    "triggerOn": "click",
+                    "enterable": True,
+                    "formatter": "function (params) {\n      console.log(params);\n      var year = '" + f"{key}" + "';\n      var month = year + '-' + params[0].name.slice(0, 2);\n      var day = year + '-' + params[0].name;\n      if (params[0].data == '-') return '';\n      return '<a href=\"/posts/run/'+ year +'/' + month + '/#' + day + '\" target=\"_blank\">' +\n      params[0].name + '</a> <br>' +\n      params[0].seriesName + ': ' + params[0].data;\n    }"
                 },
                 "xAxis": {
                     "type": "category",
