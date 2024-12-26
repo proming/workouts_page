@@ -55,7 +55,7 @@ class Poster:
             "special": "#FFFF00",
             "track": "#4DD2FF",
         }
-        self.special_distance = {"special_distance1": "10", "special_distance2": "20"}
+        self.special_distance = {"special_distance": 10, "special_distance2": 20}
         self.width = 200
         self.height = 300
         self.years = None
@@ -178,6 +178,9 @@ class Poster:
         value_style = "font-size:9px; font-family:Source Han Sans CN"
         small_value_style = "font-size:3px; font-family:Source Han Sans CN"
 
+        special_distance1 = self.special_distance["special_distance"]
+        special_distance2 = self.special_distance["special_distance2"]
+
         (
             total_length,
             average_length,
@@ -202,6 +205,38 @@ class Poster:
                 style=value_style,
             )
         )
+
+        d.add(
+            d.text(
+                self.trans("SPECIAL TRACKS"),
+                insert=(65, self.height - 20),
+                fill=text_color,
+                style=header_style,
+            )
+        )
+
+        d.add(d.rect((65, self.height - 17), (2.6, 2.6), fill=self.colors["special"]))
+
+        d.add(
+            d.text(
+                f"Over {special_distance1:.1f} km",
+                insert=(70, self.height - 14.5),
+                fill=text_color,
+                style=small_value_style,
+            )
+        )
+
+        d.add(d.rect((65, self.height - 13), (2.6, 2.6), fill=self.colors["special2"]))
+
+        d.add(
+            d.text(
+                f"Over {special_distance2:.1f} km",
+                insert=(70, self.height - 10.5),
+                fill=text_color,
+                style=small_value_style,
+            )
+        )
+
         d.add(
             d.text(
                 self.trans("STATISTICS"),
