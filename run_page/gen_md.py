@@ -623,7 +623,7 @@ def add_year_stats(year_stat, track):
     if year not in year_stat:
         year_stat[year] = {'runs': 1,
                            'distance': track.length / 1000,
-                           'sum_heartrate': track.average_heartrate,
+                           'sum_heartrate': track.average_heartrate * track.length / 1000,
                            'average_heartrate': track.average_heartrate,
                            'run_time': [track.start_time_local.strftime('%m-%d')],
                            'run_heartrate': [track.average_heartrate],
@@ -636,8 +636,8 @@ def add_year_stats(year_stat, track):
         year_stat[year] = {
             'runs': year_stat[year]['runs'] + 1,
             'distance': year_stat[year]['distance'] + track.length / 1000,
-            'sum_heartrate': year_stat[year]['sum_heartrate'] + track.average_heartrate,
-            'average_heartrate': (year_stat[year]['sum_heartrate'] + track.average_heartrate) / (year_stat[year]['runs'] + 1),
+            'sum_heartrate': year_stat[year]['sum_heartrate'] + track.average_heartrate * track.length / 1000,
+            'average_heartrate': (year_stat[year]['sum_heartrate'] + track.average_heartrate * track.length / 1000) / (year_stat[year]['distance'] + track.length / 1000),
             'run_time': year_stat[year]['run_time'],
             'run_heartrate': year_stat[year]['run_heartrate'],
             'moving_time': year_stat[year]['moving_time'] + int(track.end_time.timestamp() - track.start_time.timestamp())
@@ -649,14 +649,14 @@ def add_total_stats(total_stat, track):
     if 'runs' not in total_stat:
         total_stat['runs'] = 1
         total_stat['distance'] = track.length / 1000
-        total_stat['sum_heartrate'] = track.average_heartrate
+        total_stat['sum_heartrate'] = track.average_heartrate * track.length / 1000
         total_stat['average_heartrate'] = track.average_heartrate
         total_stat['moving_time'] = int(track.end_time.timestamp() - track.start_time.timestamp())
     else:
         total_stat['runs'] += 1
         total_stat['distance'] += track.length / 1000
-        total_stat['sum_heartrate'] += track.average_heartrate
-        total_stat['average_heartrate'] = total_stat['sum_heartrate'] / total_stat['runs']
+        total_stat['sum_heartrate'] += (track.average_heartrate * track.length / 1000)
+        total_stat['average_heartrate'] = total_stat['sum_heartrate'] / total_stat['distance']
         total_stat['moving_time'] += int(track.end_time.timestamp() - track.start_time.timestamp())
 
     return total_stat
@@ -669,21 +669,22 @@ def add_month_stats(month_stat, track):
     if year not in month_stat:
         month_stat[year] = {month: {'runs': 1, 'distance': track.length / 1000,
                                     'average_heartrate': track.average_heartrate,
-                                    'sum_heartrate': track.average_heartrate}}
+                                    'sum_heartrate': track.average_heartrate * track.length / 1000}}
     else:
         if month not in month_stat[year]:
             month_stat[year][month] = {'runs': 1, 'distance': track.length / 1000,
                                     'average_heartrate': track.average_heartrate,
-                                    'sum_heartrate': track.average_heartrate}
+                                    'sum_heartrate': track.average_heartrate * track.length / 1000}
         else:
             month_stat[year][month] = {
                 'runs': month_stat[year][month]['runs'] + 1,
                 'distance': month_stat[year][month]['distance'] + track.length / 1000,
-                'average_heartrate': (month_stat[year][month]['sum_heartrate'] + track.average_heartrate) / (month_stat[year][month]['runs'] + 1),
-                'sum_heartrate': month_stat[year][month]['sum_heartrate'] + track.average_heartrate
+                'average_heartrate': (month_stat[year][month]['sum_heartrate'] + track.average_heartrate * track.length / 1000) / (month_stat[year][month]['distance'] + track.length / 1000),
+                'sum_heartrate': month_stat[year][month]['sum_heartrate'] + track.average_heartrate * track.length / 1000
             }
 
     return month_stat
+
 
 def add_day_stats(day_stat, track):
     year = track.start_time_local.year
