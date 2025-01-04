@@ -320,7 +320,7 @@ async def download_new_activities(
     return to_generate_garmin_ids, to_generate_garmin_id2title
 
 
-def update_activity_title(sql_file, secret_string, auth_domain, is_only_running):
+async def update_activity_title(sql_file, secret_string, auth_domain, is_only_running):
     session = init_db(sql_file)
     client = Garmin(secret_string, auth_domain, is_only_running)
     activities = (
@@ -331,7 +331,7 @@ def update_activity_title(sql_file, secret_string, auth_domain, is_only_running)
     for activity in activities:
         if activity.name == "":
             try:
-                activity_summary = client.get_activity_summary(activity.run_id)
+                activity_summary = await client.get_activity_summary(activity.run_id)
                 activity_title = activity_summary.get("activityName", "")
                 activity.track_name = activity_title
             except Exception as e:
@@ -423,4 +423,8 @@ if __name__ == "__main__":
         SQL_FILE, folder, JSON_FILE, file_suffix=file_type, activity_title_dict=id2title
     )
 
-    update_activity_title(SQL_FILE, secret_string, auth_domain, is_only_running)
+    loop = asyncio.get_event_loop()
+    future = asyncio.ensure_future(
+        update_activity_title(SQL_FILE, secret_string, auth_domain, is_only_running)
+    )
+    loop.run_until_complete(future)
