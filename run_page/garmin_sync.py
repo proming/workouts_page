@@ -437,8 +437,8 @@ if __name__ == "__main__":
         SQL_FILE, folder, JSON_FILE, file_suffix=file_type, activity_title_dict=id2title
     )
 
-    loop = asyncio.get_event_loop()
-    future = asyncio.ensure_future(
-        update_activity_title(SQL_FILE, secret_string, auth_domain, is_only_running)
-    )
-    loop.run_until_complete(future)
+    # loop = asyncio.get_event_loop()
+    # future = asyncio.ensure_future(
+    #     update_activity_title(SQL_FILE, secret_string, auth_domain, is_only_running)
+    # )
+    # loop.run_until_complete(future)
