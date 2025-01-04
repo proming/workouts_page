@@ -98,7 +98,7 @@ if __name__ == "__main__":
     )
 
     loader = track_loader.TrackLoader()
-    tracks = loader.load_tracks(FIT_FOLDER, "fit")
+    tracks = loader.load_tracks(FIT_FOLDER, "fit", is_special=True)
 
     loop = asyncio.get_event_loop()
     future = asyncio.ensure_future(

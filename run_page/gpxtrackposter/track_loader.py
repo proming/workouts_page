@@ -75,9 +75,12 @@ class TrackLoader:
             "fit": load_fit_file,
         }
 
-    def load_tracks(self, data_dir, file_suffix="gpx", activity_title_dict={}):
+    def load_tracks(self, data_dir, file_suffix="gpx", activity_title_dict={}, is_special=False):
         """Load tracks data_dir and return as a List of tracks"""
-        file_names = [x for x in self._list_data_files(data_dir, file_suffix)]
+        if is_special:
+            file_names = [x for x in self._list_data_files2(data_dir, file_suffix)]
+        else:
+            file_names = [x for x in self._list_data_files(data_dir, file_suffix)]
         print(f"{file_suffix.upper()} files: {len(file_names)}")
 
         tracks = []
@@ -205,8 +208,19 @@ class TrackLoader:
         for name in os.listdir(data_dir):
             if name.startswith("."):
                 continue
-            # if name in synced_files:
-            #     continue
+            if name in synced_files:
+                continue
+            path_name = os.path.join(data_dir, name)
+            if name.endswith(f".{file_suffix}") and os.path.isfile(path_name):
+                yield path_name
+
+    def _list_data_files2(data_dir, file_suffix):
+        data_dir = os.path.abspath(data_dir)
+        if not os.path.isdir(data_dir):
+            raise ParameterError(f"Not a directory: {data_dir}")
+        for name in os.listdir(data_dir):
+            if name.startswith("."):
+                continue
             path_name = os.path.join(data_dir, name)
             if name.endswith(f".{file_suffix}") and os.path.isfile(path_name):
                 yield path_name
