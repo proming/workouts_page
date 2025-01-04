@@ -205,8 +205,8 @@ class TrackLoader:
         for name in os.listdir(data_dir):
             if name.startswith("."):
                 continue
-            if name in synced_files:
-                continue
+            # if name in synced_files:
+            #     continue
             path_name = os.path.join(data_dir, name)
             if name.endswith(f".{file_suffix}") and os.path.isfile(path_name):
                 yield path_name

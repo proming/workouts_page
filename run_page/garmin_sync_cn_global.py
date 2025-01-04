@@ -12,6 +12,7 @@ import sys
 from config import FIT_FOLDER, GPX_FOLDER, JSON_FILE, SQL_FILE, config
 from garmin_sync import Garmin, get_downloaded_ids, update_activity_title
 from garmin_sync import download_new_activities, gather_with_concurrency
+from gpxtrackposter import track_loader
 from utils import make_activities_file
 
 if __name__ == "__main__":
@@ -96,8 +97,11 @@ if __name__ == "__main__":
         SQL_FILE, FIT_FOLDER, JSON_FILE, file_suffix="fit", activity_title_dict=id2title
     )
 
+    loader = track_loader.TrackLoader()
+    tracks = loader.load_tracks(FIT_FOLDER, "fit")
+
     loop = asyncio.get_event_loop()
     future = asyncio.ensure_future(
-        update_activity_title(SQL_FILE, secret_string_cn, auth_domain, is_only_running)
+        update_activity_title(SQL_FILE, secret_string_cn, auth_domain, is_only_running, tracks)
     )
     loop.run_until_complete(future)

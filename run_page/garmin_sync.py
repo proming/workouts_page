@@ -320,7 +320,7 @@ async def download_new_activities(
     return to_generate_garmin_ids, to_generate_garmin_id2title
 
 
-async def update_activity_title(sql_file, secret_string, auth_domain, is_only_running):
+async def update_activity_title(sql_file, secret_string, auth_domain, is_only_running, tracks=[]):
     session = init_db(sql_file)
     client = Garmin(secret_string, auth_domain, is_only_running)
     activities = (
@@ -330,8 +330,17 @@ async def update_activity_title(sql_file, secret_string, auth_domain, is_only_ru
     )
     for activity in activities:
         if activity.name == "":
+            activity_id = None
+            for track in tracks:
+                if track.run_id == activity.run_id:
+                    file_name = track.file_names[0]
+                    activity_id = file_name.split(".")[0]
+                    break
+
+            if activity_id is None:
+                continue
             try:
-                activity_summary = await client.get_activity_summary(activity.run_id)
+                activity_summary = await client.get_activity_summary(activity_id)
                 activity_title = activity_summary.get("activityName", "")
                 activity.track_name = activity_title
             except Exception as e:

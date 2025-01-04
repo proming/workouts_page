@@ -7,7 +7,7 @@ import datetime as dt
 import svgwrite
 
 import utils
-from config import SQL_FILE
+from config import SQL_FILE, FIT_FOLDER
 from gpxtrackposter import track_loader
 from gpxtrackposter.exceptions import ParameterError
 from synced_data_file_logger import load_generated_activity_list
@@ -119,7 +119,7 @@ def main():
             SQL_FILE, False, False, args.only_run
         )
     else:
-        tracks = loader.load_tracks(args.gpx_dir)
+        tracks = loader.load_tracks(FIT_FOLDER, "fit")
     if not tracks:
         return
 
