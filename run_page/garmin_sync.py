@@ -331,11 +331,11 @@ def update_activity_title(sql_file, secret_string, auth_domain, is_only_running)
     for activity in activities:
         if activity.name == "":
             try:
-                activity_summary = client.get_activity_summary(activity.id)
+                activity_summary = client.get_activity_summary(activity.run_id)
                 activity_title = activity_summary.get("activityName", "")
                 activity.track_name = activity_title
             except Exception as e:
-                print(f"Failed to get activity summary {activity.id}: {str(e)}")
+                print(f"Failed to get activity summary {activity.run_id}: {str(e)}")
                 continue
     session.commit()
 
