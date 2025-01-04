@@ -19,6 +19,8 @@ import garth
 import httpx
 from config import FOLDER_DICT, JSON_FILE, SQL_FILE, config
 from garmin_device_adaptor import wrap_device_info
+from generator.db import Activity, init_db
+from gpxtrackposter import track_loader
 from utils import make_activities_file_only
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -318,6 +320,26 @@ async def download_new_activities(
     return to_generate_garmin_ids, to_generate_garmin_id2title
 
 
+def update_activity_title(sql_file, secret_string, auth_domain, is_only_running):
+    session = init_db(sql_file)
+    client = Garmin(secret_string, auth_domain, is_only_running)
+    activities = (
+        session.query(Activity)
+        .filter(Activity.name == "")
+        .order_by(Activity.start_date_local)
+    )
+    for activity in activities:
+        if activity.name == "":
+            try:
+                activity_summary = client.get_activity_summary(activity.id)
+                activity_title = activity_summary.get("activityName", "")
+                activity.track_name = activity_title
+            except Exception as e:
+                print(f"Failed to get activity summary {activity.id}: {str(e)}")
+                continue
+    session.commit()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -400,3 +422,5 @@ if __name__ == "__main__":
     make_activities_file_only(
         SQL_FILE, folder, JSON_FILE, file_suffix=file_type, activity_title_dict=id2title
     )
+
+    update_activity_title(SQL_FILE, secret_string, auth_domain, is_only_running)
