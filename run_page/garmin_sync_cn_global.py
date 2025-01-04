@@ -8,10 +8,12 @@ import asyncio
 import os
 import sys
 
+from sqlalchemy import update
 
 from config import FIT_FOLDER, GPX_FOLDER, JSON_FILE, SQL_FILE, config
 from garmin_sync import Garmin, get_downloaded_ids, update_activity_title
 from garmin_sync import download_new_activities, gather_with_concurrency
+from generator.db import init_db, Activity
 from gpxtrackposter import track_loader
 from utils import make_activities_file
 
@@ -97,11 +99,23 @@ if __name__ == "__main__":
         SQL_FILE, FIT_FOLDER, JSON_FILE, file_suffix="fit", activity_title_dict=id2title
     )
 
-    loader = track_loader.TrackLoader()
-    tracks = loader.load_tracks(FIT_FOLDER, "fit", is_special=True)
-
-    loop = asyncio.get_event_loop()
-    future = asyncio.ensure_future(
-        update_activity_title(SQL_FILE, secret_string_cn, auth_domain, is_only_running, tracks)
-    )
-    loop.run_until_complete(future)
+    # loader = track_loader.TrackLoader()
+    # tracks = loader.load_tracks(FIT_FOLDER, "fit", is_special=True)
+    #
+    # loop = asyncio.get_event_loop()
+    # future = asyncio.ensure_future(
+    #     update_activity_title(SQL_FILE, secret_string_cn, auth_domain, is_only_running, tracks)
+    # )
+    # loop.run_until_complete(future)
+    # id2title = future.result()
+    # print(f"update activity title finished: {id2title}")
+    #
+    # session = init_db(SQL_FILE)
+    # for key in id2title:
+    #     stmt = (
+    #         update(Activity).
+    #         where(Activity.run_id == key).
+    #         values(name=id2title[key])
+    #     )
+    #     session.execute(stmt)
+    # session.commit()

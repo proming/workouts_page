@@ -329,24 +329,29 @@ async def update_activity_title(sql_file, secret_string, auth_domain, is_only_ru
         .filter(Activity.name == "")
         .order_by(Activity.start_date_local)
     )
+
+    to_generate_garmin_id2title = {}
     for activity in activities:
         activity_id = None
         for track in tracks:
-            if track.run_id == activity.run_id:
+            if track.run_id == activity.run_id + 28800000:
                 file_name = track.file_names[0]
                 activity_id = file_name.split(".")[0]
                 break
 
         if activity_id is None:
+            print(f"Can't find activity id for {activity.run_id} {activity.start_date_local}")
             continue
         try:
             activity_summary = await client.get_activity_summary(activity_id)
             activity_title = activity_summary.get("activityName", "")
-            activity.track_name = activity_title
+            to_generate_garmin_id2title[activity.run_id] = activity_title
         except Exception as e:
             print(f"Failed to get activity summary {activity.run_id}: {str(e)}")
             continue
-    session.commit()
+
+    await client.req.aclose()
+    return to_generate_garmin_id2title
 
 
 if __name__ == "__main__":
