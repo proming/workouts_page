@@ -321,6 +321,7 @@ async def download_new_activities(
 
 
 async def update_activity_title(sql_file, secret_string, auth_domain, is_only_running, tracks=[]):
+    print("Start to update activity title: " + len(tracks))
     session = init_db(sql_file)
     client = Garmin(secret_string, auth_domain, is_only_running)
     activities = (
@@ -329,23 +330,22 @@ async def update_activity_title(sql_file, secret_string, auth_domain, is_only_ru
         .order_by(Activity.start_date_local)
     )
     for activity in activities:
-        if activity.name == "":
-            activity_id = None
-            for track in tracks:
-                if track.run_id == activity.run_id:
-                    file_name = track.file_names[0]
-                    activity_id = file_name.split(".")[0]
-                    break
+        activity_id = None
+        for track in tracks:
+            if track.run_id == activity.run_id:
+                file_name = track.file_names[0]
+                activity_id = file_name.split(".")[0]
+                break
 
-            if activity_id is None:
-                continue
-            try:
-                activity_summary = await client.get_activity_summary(activity_id)
-                activity_title = activity_summary.get("activityName", "")
-                activity.track_name = activity_title
-            except Exception as e:
-                print(f"Failed to get activity summary {activity.run_id}: {str(e)}")
-                continue
+        if activity_id is None:
+            continue
+        try:
+            activity_summary = await client.get_activity_summary(activity_id)
+            activity_title = activity_summary.get("activityName", "")
+            activity.track_name = activity_title
+        except Exception as e:
+            print(f"Failed to get activity summary {activity.run_id}: {str(e)}")
+            continue
     session.commit()
 
 
