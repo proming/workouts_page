@@ -214,6 +214,7 @@ class TrackLoader:
             if name.endswith(f".{file_suffix}") and os.path.isfile(path_name):
                 yield path_name
 
+    @staticmethod
     def _list_data_files2(data_dir, file_suffix):
         data_dir = os.path.abspath(data_dir)
         if not os.path.isdir(data_dir):
