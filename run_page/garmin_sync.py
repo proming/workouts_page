@@ -321,7 +321,7 @@ async def download_new_activities(
 
 
 async def update_activity_title(sql_file, secret_string, auth_domain, is_only_running, tracks=[]):
-    print("Start to update activity title: " + len(tracks))
+    print("Start to update activity title: %s" % len(tracks))
     session = init_db(sql_file)
     client = Garmin(secret_string, auth_domain, is_only_running)
     activities = (
