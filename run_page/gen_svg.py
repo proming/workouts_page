@@ -197,6 +197,15 @@ def main():
     )
 
     args_parser.add_argument(
+        "--github-style",
+        dest="github_style",
+        metavar="GITHUB_STYLE",
+        type=str,
+        default="align-firstday",
+        help='github svg style; "align-firstday", "align-monday" (default: "align-firstday").',
+    )
+
+    args_parser.add_argument(
         "--only-run",
         dest="only_run",
         action="store_true",
@@ -317,6 +326,7 @@ def main():
     p.drawer_type = "plain" if is_circular and not args.with_mp4 else "title"
     if args.type == "github":
         p.height = 55 + p.years.real_year * 43
+    p.github_style = args.github_style
     # for special circular
     if is_circular:
         years = p.years.all()[:]
