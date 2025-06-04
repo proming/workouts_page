@@ -7,8 +7,6 @@ import os
 import sys
 import cv2
 
-import appdirs
-
 import utils
 from config import SQL_FILE
 from gpxtrackposter import (
@@ -27,8 +25,6 @@ from gpxtrackposter.exceptions import ParameterError, PosterError
 # from flopp great repo
 __app_name__ = "create_poster"
 __app_author__ = "flopp.net"
-
-from gpxtrackposter.track import Track
 
 from synced_data_file_logger import load_generated_activity_list, save_generated_activity_list
 

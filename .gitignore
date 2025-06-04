@@ -24,3 +24,13 @@ config.yaml
 
 route.png
 route.svg
+
+node_modules/
+FIT_OUT/
+assets/
+
+.idea/
+/run_page/data.db
+/imported.json
+/synced_activity.json
+/generated_activity.json

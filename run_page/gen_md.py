@@ -1,7 +1,5 @@
 import argparse
 import json
-import sys
-from datetime import datetime
 import datetime as dt
 
 import svgwrite
@@ -10,7 +8,6 @@ import utils
 from config import SQL_FILE, FIT_FOLDER
 from gpxtrackposter import track_loader
 from gpxtrackposter.exceptions import ParameterError
-from synced_data_file_logger import load_generated_activity_list
 
 track_color = "#4DD2FF"
 special_color = "#FFFF00"
