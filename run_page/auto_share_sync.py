@@ -64,7 +64,7 @@ def generate_share_image(distance, pace, time, date, client):
 
     try:
         result = client.images.edit(
-            model="gpt-image-1",
+            model="dall-e-2", # gpt-image-1
             prompt=prompt,
             image=[open("route.png", "rb")],
             n=1,
