@@ -17,6 +17,7 @@ from gpxtrackposter import (
     grid_drawer,
     poster,
     track_loader,
+    month_of_life_drawer,
     calendar_drawer,
     heatmap_drawer,
     laps_drawer
@@ -40,6 +41,7 @@ def main():
         "grid": grid_drawer.GridDrawer(p),
         "circular": circular_drawer.CircularDrawer(p),
         "github": github_drawer.GithubDrawer(p),
+        "monthoflife": month_of_life_drawer.MonthOfLifeDrawer(p),
         "calendar": calendar_drawer.CalendarDrawer(p),
         "heatmap": heatmap_drawer.HeatmapDrawer(p),
         "laps": laps_drawer.LapsDrawer(p),
@@ -286,8 +288,9 @@ def main():
         return
 
     is_circular = args.type == "circular"
+    is_mol = args.type == "monthoflife"
 
-    if not is_circular and not args.type == "calendar":
+    if not is_circular and not is_mol and not args.type == "calendar":
         print(
             f"Creating poster of type {args.type} with {len(tracks)} tracks and storing it in file {args.output}..."
         )
@@ -324,6 +327,8 @@ def main():
     length_range_by_date = p.length_range_by_date
     # circular not add footer and header
     p.drawer_type = "plain" if is_circular and not args.with_mp4 else "title"
+    if is_mol:
+        p.drawer_type = "monthoflife"
     if args.type == "github":
         p.height = 55 + p.years.real_year * 43
     p.github_style = args.github_style
