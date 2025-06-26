@@ -34,3 +34,4 @@ assets/
 /imported.json
 /synced_activity.json
 /generated_activity.json
+/fit_cache.json

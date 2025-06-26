@@ -24,6 +24,7 @@ SYNCED_FILE = os.path.join(parent, "imported.json")
 SYNCED_ACTIVITY_FILE = os.path.join(parent, "synced_activity.json")
 GENERATED_ACTIVITY_FILE = os.path.join(parent, "generated_activity.json")
 NAME_MAPPING_FILE = os.path.join(FIT_FOLDER, "name_mapping.json")
+FIT_CACHE_FILE = os.path.join(parent, "fit_cache.json")
 
 # TODO: Move into nike_sync NRC THINGS
 
