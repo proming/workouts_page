@@ -16,13 +16,10 @@ from io import BytesIO
 from lxml import etree
 
 import aiofiles
-import cloudscraper
 import garth
 import httpx
 from config import FOLDER_DICT, JSON_FILE, SQL_FILE
-from garmin_device_adaptor import wrap_device_info
-from generator.db import Activity, init_db
-from gpxtrackposter import track_loader
+from garmin_device_adaptor import process_garmin_data
 from utils import make_activities_file_only
 
 # logging.basicConfig(level=logging.DEBUG)
@@ -54,7 +51,6 @@ class Garmin:
         Init module
         """
         self.req = httpx.AsyncClient(timeout=TIME_OUT)
-        self.cf_req = cloudscraper.CloudScraper()
         self.URL_DICT = (
             GARMIN_CN_URL_DICT
             if auth_domain and str(auth_domain).upper() == "CN"
@@ -136,16 +132,11 @@ class Garmin:
             use_fake_garmin_device,
         )
         for data in datas:
-            print(data.filename)
             with open(data.filename, "wb") as f:
                 for chunk in data.content:
                     f.write(chunk)
             f = open(data.filename, "rb")
-            # wrap fake garmin device to origin fit file, current not support gpx file
-            if use_fake_garmin_device:
-                file_body = wrap_device_info(f)
-            else:
-                file_body = BytesIO(f.read())
+            file_body = process_garmin_data(f, use_fake_garmin_device)
             files = {"file": (data.filename, file_body)}
 
             try:
@@ -362,7 +353,7 @@ async def download_new_activities(
 ):
     client = Garmin(secret_string, auth_domain, is_only_running)
     # because I don't find a para for after time, so I use garmin-id as filename
-    # to find new run to generage
+    # to find new run to generate
     activity_ids = await get_activity_id_list(client)
     to_generate_garmin_ids = list(set(activity_ids) - set(downloaded_ids))
     print(f"{len(to_generate_garmin_ids)} new activities to be downloaded")
@@ -397,40 +388,6 @@ async def download_new_activities(
     return to_generate_garmin_ids, to_generate_garmin_id2title
 
 
-async def update_activity_title(sql_file, secret_string, auth_domain, is_only_running, tracks=[]):
-    print("Start to update activity title: %s" % len(tracks))
-    session = init_db(sql_file)
-    client = Garmin(secret_string, auth_domain, is_only_running)
-    activities = (
-        session.query(Activity)
-        .filter(Activity.name == "")
-        .order_by(Activity.start_date_local)
-    )
-
-    to_generate_garmin_id2title = {}
-    for activity in activities:
-        activity_id = None
-        for track in tracks:
-            if track.run_id == activity.run_id + 28800000:
-                file_name = track.file_names[0]
-                activity_id = file_name.split(".")[0]
-                break
-
-        if activity_id is None:
-            print(f"Can't find activity id for {activity.run_id} {activity.start_date_local}")
-            continue
-        try:
-            activity_summary = await client.get_activity_summary(activity_id)
-            activity_title = activity_summary.get("activityName", "")
-            to_generate_garmin_id2title[activity.run_id] = activity_title
-        except Exception as e:
-            print(f"Failed to get activity summary {activity.run_id}: {str(e)}")
-            continue
-
-    await client.req.aclose()
-    return to_generate_garmin_id2title
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -440,7 +397,7 @@ if __name__ == "__main__":
         "--is-cn",
         dest="is_cn",
         action="store_true",
-        help="if garmin accout is cn",
+        help="if garmin account is cn",
     )
     parser.add_argument(
         "--only-run",
@@ -511,9 +468,3 @@ if __name__ == "__main__":
     make_activities_file_only(
         SQL_FILE, folder, JSON_FILE, file_suffix=file_type, activity_title_dict=id2title
     )
-
-    # loop = asyncio.get_event_loop()
-    # future = asyncio.ensure_future(
-    #     update_activity_title(SQL_FILE, secret_string, auth_domain, is_only_running)
-    # )
-    # loop.run_until_complete(future)
