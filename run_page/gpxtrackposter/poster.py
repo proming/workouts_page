@@ -70,7 +70,7 @@ class Poster:
     def set_language(self, language):
         if language:
             try:
-                locale.setlocale(locale.LC_ALL, f"{language}.UTF-8")
+                locale.setlocale(locale.LC_ALL, f"{language}.utf8")
             except locale.Error as e:
                 print(f'Cannot set locale to "{language}": {e}')
                 language = None
@@ -130,10 +130,6 @@ class Poster:
         width = self.width
         if self.drawer_type == "plain":
             height = height - 100
-            # self.colors["background"] = "#1a1a1a"
-            # self.colors["track"] = "red"
-            # self.colors["special"] = "yellow"
-            # self.colors["text"] = "#e1ed5e"
         d = svgwrite.Drawing(output, (f"{width}mm", f"{height}mm"))
         d.viewbox(0, 0, self.width, height)
         if not self.no_background:

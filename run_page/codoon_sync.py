@@ -8,7 +8,7 @@ import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from xml.dom import minidom
 
 import eviltransform
@@ -45,7 +45,7 @@ FitType = np.dtype(
 
 # device info
 user_agent = "CodoonSport(8.9.0 1170;Android 7;Sony XZ1)"
-did = "24-00000000-03e1-7dd7-0033-c5870033c588"
+did = "24-ffffffff-faac-3052-0033-c5870033c587"
 # May be Forerunner 945?
 CONNECT_API_PART_NUMBER = "006-D2449-00"
 
@@ -272,9 +272,8 @@ def tcx_job(run_data):
 
             fit_list.append((unix_time, hr, latitude, longitude, elevation))
 
-    fit_array = np.array(fit_list, dtype=FitType)
-
-    if fit_array is not None:
+    if fit_list:
+        fit_array = np.array(fit_list, dtype=FitType)
         # order array
         fit_array = np.sort(fit_array, order="time")
         # write to TCX file
@@ -439,7 +438,9 @@ class Codoon:
                 "latitude": point["latitude"],
                 "longitude": point["longitude"],
                 "elevation": point["elevation"],
-                "time": adjust_time_to_utc(to_date(point["time_stamp"]), BASE_TIMEZONE),
+                "time": adjust_time_to_utc(
+                    to_date(point["time_stamp"]), BASE_TIMEZONE
+                ).replace(tzinfo=timezone.utc),
             }
             points_dict_list.append(points_dict)
         gpx = gpxpy.gpx.GPX()

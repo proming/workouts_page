@@ -19,9 +19,9 @@ const WorkoutStat = ({
   color: string;
 }) => (
   <div
-    className={`${className || ' '} w-100 pb-2`}
+    className={`${className || ' '} pb-2`}
     onClick={onClick}
-    style={{ color: color }}
+    // style={{ color: color }}
   >
     <span className={`text-5xl font-bold italic`}>{intComma(value)}</span>
     <span className="text-2xl font-semibold italic">{description}</span>

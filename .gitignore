@@ -25,6 +25,8 @@ config.yaml
 route.png
 route.svg
 
+.env
+
 node_modules/
 FIT_OUT/
 assets/

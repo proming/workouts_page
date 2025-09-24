@@ -204,6 +204,15 @@ def main():
     )
 
     args_parser.add_argument(
+        "--sport-type",
+        dest="sport_type",
+        metavar="SPORT_TYPE",
+        type=str,
+        default="all",
+        help="Sport type",
+    )
+
+    args_parser.add_argument(
         "--only-run",
         dest="only_run",
         action="store_true",
@@ -280,6 +289,10 @@ def main():
         )
     else:
         tracks = loader.load_tracks(args.gpx_dir)
+
+    if args.sport_type != "all":
+        tracks = [track for track in tracks if track.type == args.sport_type]
+
     if not tracks:
         return
 
@@ -328,9 +341,21 @@ def main():
     if args.type == "github":
         p.height = 55 + p.years.real_year * 43
     p.github_style = args.github_style
+
+    if args.type == "circular":
+        if args.background_color == "#222222":
+            p.colors["background"] = "#1a1a1a"
+        if args.track_color == "#4DD2FF":
+            p.colors["track"] = "red"
+        if args.special_color == "#FFFF00":
+            p.colors["special"] = "yellow"
+        if args.text_color == "#FFFFFF":
+            p.colors["text"] = "#e1ed5e"
+
     # for special circular
     if is_circular:
         years = p.years.all()[:]
+        output_dir = os.path.dirname(args.output) or "assets"
         for y in years:
             if args.with_mp4:
                 date = datetime.date(y, 1, 1)
@@ -346,44 +371,44 @@ def main():
                         p.set_tracks(m_tracks)
                         p.length_range = length_range
                         p.length_range_by_date = length_range_by_date
-                        p.draw(drawers[args.type], os.path.join("assets", f"circular_{text_date}.svg"))
+                        p.draw(drawers[args.type], os.path.join(output_dir, f"circular_{text_date}.svg"))
                         from cairosvg import svg2png
-                        svg2png(url=os.path.join("assets", f"circular_{text_date}.svg"),
-                                write_to=os.path.join("assets", f"circular_{text_date}.png"))
+                        svg2png(url=os.path.join(output_dir, f"circular_{text_date}.svg"),
+                                write_to=os.path.join(output_dir, f"circular_{text_date}.png"))
                         svg_files.append(f"circular_{text_date}")
                     date += datetime.timedelta(1)
                     m_count = len(m_tracks)
                 if len(svg_files) != 0:
                     w, h = None, None
                     for file in svg_files:
-                        frame = cv2.imread(os.path.join("assets", f"{file}.png"))
+                        frame = cv2.imread(os.path.join(output_dir, f"{file}.png"))
 
                         if w is None:
                             # Setting up the video writer
                             h, w, _ = frame.shape
                             fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-                            writer = cv2.VideoWriter(os.path.join("assets", f'circular_{y}.mp4'), fourcc,
+                            writer = cv2.VideoWriter(os.path.join(output_dir, f'circular_{y}.mp4'), fourcc,
                                                      len(svg_files) / args.animation_time, (w, h))
 
                         writer.write(frame)
                     writer.release()
 
                     os.system('ffmpeg -i %s -i %s -map 0:v -map 1:a -c:v copy -shortest -y %s' % (
-                        os.path.join("assets", f'circular_{y}.mp4'),
-                        os.path.join("assets", 'background_wake.mp3'),
-                        os.path.join("assets", f'circular_{y}_bg.mp4')
+                        os.path.join(output_dir, f'circular_{y}.mp4'),
+                        os.path.join(output_dir, 'background_wake.mp3'),
+                        os.path.join(output_dir, f'circular_{y}_bg.mp4')
                     ))
                     for file in svg_files:
-                        os.remove(os.path.join("assets", f"{file}.svg"))
-                        os.remove(os.path.join("assets", f"{file}.png"))
-                    os.remove(os.path.join("assets", f"circular_{y}.mp4"))
-                    os.rename(os.path.join("assets", f"circular_{y}_bg.mp4"),
-                              os.path.join("assets", f"circular_{y}.mp4"))
+                        os.remove(os.path.join(output_dir, f"{file}.svg"))
+                        os.remove(os.path.join(output_dir, f"{file}.png"))
+                    os.remove(os.path.join(output_dir, f"circular_{y}.mp4"))
+                    os.rename(os.path.join(output_dir, f"circular_{y}_bg.mp4"),
+                              os.path.join(output_dir, f"circular_{y}.mp4"))
             else:
                 p.years.from_year, p.years.to_year = y, y
                 # may be refactor
                 p.set_tracks([t for t in tracks if t.start_time_local.strftime("%Y") == str(y)])
-                p.draw(drawers[args.type], os.path.join("assets", f"year_{str(y)}.svg"))
+                p.draw(drawers[args.type], os.path.join(output_dir, f"year_{str(y)}.svg"))
                 # from cairosvg import svg2png
                 # svg2png(url=os.path.join("assets", f"year_{str(y)}.svg"),
                 #         write_to=os.path.join("assets", f"year_{str(y)}.png"))
@@ -393,7 +418,7 @@ def main():
             p.years.from_year, p.years.to_year = y, y
             # may be refactor
             p.set_tracks([t for t in tracks if t.start_time_local.strftime("%Y") == str(y)])
-            p.draw(drawers[args.type], os.path.join("assets", f"calendar_{str(y)}.svg"))
+            p.draw(drawers[args.type], os.path.join(output_dir, f"calendar_{str(y)}.svg"))
     if args.type == 'laps':
         generated_activity = load_generated_activity_list()
         for track in tracks:
