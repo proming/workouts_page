@@ -47,3 +47,5 @@ timezonefinder
 Pint
 fastkml
 beautifulsoup4
+fastapi
+uvicorn

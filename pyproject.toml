@@ -38,6 +38,8 @@ dependencies = [
   "svglib>=1.5.1",
   "cairosvg>=2.7.1",
   "certifi==2025.1.31",
+  "fastapi>=0.136.1",
+  "uvicorn>=0.46.0",
 ]
 requires-python = ">=3.12"
 readme = "README.md"
