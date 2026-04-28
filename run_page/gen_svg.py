@@ -463,14 +463,7 @@ def main():
 
             month_tracks = get_tracks_by_month(tracks, year, track.start_time_local.month)
             generate_month_page(month_tracks, year, track.start_time_local.month, args.blog_dir)
-
             # generate_track_page(args, file_name, track, year)
-
-            p.years.from_year, p.years.to_year = y, y
-            # may be refactor
-            p.set_tracks(tracks)
-            p.draw(drawers[args.type], os.path.join(output_dir, f"year_{str(y)}.svg"))
-
             generated_activity.append(track.run_id)
         save_generated_activity_list(generated_activity)
 
