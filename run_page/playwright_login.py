@@ -93,6 +93,28 @@ def api_login(request: LoginRequest):
         secret = _do_login(request.user, request.is_cn)
         return {"status": "success", "secret_string": secret}
     except Exception as e:
+        import urllib.request
+        import os
+        try:
+            bot_token = os.getenv("TG_BOT_TOKEN")
+            chat_id = os.getenv("TG_CHAT_ID")
+            thread_id = os.getenv("TG_MESSAGE_THREAD_ID")
+            
+            if bot_token and chat_id:
+                tg_url = f"https://api.telegram.org/{bot_token}/sendMessage"
+                payload = {
+                    "chat_id": chat_id,
+                    "text": str(e)
+                }
+                if thread_id:
+                    payload["message_thread_id"] = thread_id
+                    
+                data = urlencode(payload).encode('utf-8')
+                req = urllib.request.Request(tg_url, data=data)
+                urllib.request.urlopen(req, timeout=5)
+        except Exception as tg_e:
+            print(f"Telegram notification failed: {tg_e}")
+
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
