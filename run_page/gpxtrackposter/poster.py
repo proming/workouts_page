@@ -130,6 +130,9 @@ class Poster:
         width = self.width
         if self.drawer_type == "plain":
             height = height - 100
+        if self.drawer_type == "year_summary":
+            # Year summary has its own layout, use full size
+            height = height
         d = svgwrite.Drawing(output, (f"{width}mm", f"{height}mm"))
         d.viewbox(0, 0, self.width, height)
         if not self.no_background:
@@ -137,7 +140,10 @@ class Poster:
             offset = 0
         else:
           offset = 10
-        if not self.drawer_type == "plain":
+        if self.drawer_type == "year_summary":
+            # Year summary drawer handles its own layout
+            self.__draw_tracks(d, XY(width - 10, height - 10), XY(5, 5))
+        elif not self.drawer_type == "plain":
             self.__draw_header(d)
             self.__draw_footer(d)
             self.__draw_tracks(d, XY(width - 20, height - 30 - 30), XY(10, 30))
@@ -218,7 +224,7 @@ class Poster:
 
             d.add(
                 d.text(
-                    f"Over {special_distance1:.1f} km",
+                    f"Over {special_distance1:.1f} {self.u()}",
                     insert=(70, self.height - 14.5),
                     fill=text_color,
                     style=small_value_style,
@@ -231,7 +237,7 @@ class Poster:
 
             d.add(
                 d.text(
-                    f"Over {special_distance2:.1f} km",
+                    f"Over {special_distance2:.1f} {self.u()}",
                     insert=(70, self.height - 10.5),
                     fill=text_color,
                     style=small_value_style,
