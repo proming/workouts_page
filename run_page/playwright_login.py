@@ -40,12 +40,6 @@ def _do_login(user: str, is_cn: bool) -> str:
     except Exception as e:
         raise RuntimeError(f"Failed to read or parse credentials JSON: {e}")
 
-    tokenstore = _DIR / f"tokens-{user}"
-    try:
-        tokenstore.mkdir(exist_ok=True)
-    except Exception as e:
-        raise RuntimeError(f"Failed to create tokenstore directory: {e}")
-
     try:
         with sync_playwright() as p:
             # 在服务端运行建议开启headless=True，如果Garmin登录遇到验证码可以改为False并在本地登录一次
@@ -60,13 +54,13 @@ def _do_login(user: str, is_cn: bool) -> str:
             page.fill('input[name="username"]', creds["username"])
             page.fill('input[name="password"]', creds["password"])
             page.click("#login-btn-signin")
-            
+
             try:
                 page.wait_for_url("**/embed?ticket=**", timeout=60_000)
             except Exception as e:
                 # 超时往往意味着密码错误或者遭遇滑块验证码
                 raise RuntimeError(f"Login timeout or blocked (e.g., incorrect password or captcha). Current URL: {page.url}") from e
-                
+
             ticket_url = page.url
             browser.close()
     except RuntimeError:
