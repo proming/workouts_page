@@ -466,12 +466,14 @@ def main():
 
             # generate_track_page(args, file_name, track, year)
 
-            generated_activity.append(track.run_id)
-        save_generated_activity_list(generated_activity)
             p.years.from_year, p.years.to_year = y, y
             # may be refactor
             p.set_tracks(tracks)
             p.draw(drawers[args.type], os.path.join(output_dir, f"year_{str(y)}.svg"))
+
+            generated_activity.append(track.run_id)
+        save_generated_activity_list(generated_activity)
+
     if is_year_summary and args.summary_year is None:
         # Generate year summary for all years when --summary-year is not specified
         years = p.years.all()[:]
