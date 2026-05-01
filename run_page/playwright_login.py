@@ -94,26 +94,43 @@ def api_login(request: LoginRequest):
         return {"status": "success", "secret_string": secret}
     except Exception as e:
         import urllib.request
+        import urllib.parse
+        import json
         import os
+
+        bot_token = os.getenv("TG_BOT_TOKEN")
+        chat_id = os.getenv("TG_CHAT_ID")
+        thread_id = os.getenv("TG_MESSAGE_THREAD_ID")
+        # Telegram Bot API URL
+        url = f"https://api.telegram.org/{bot_token}/sendMessage"
+
+        # 准备请求数据（对应 curl 中的 -d 参数）
+        data = {
+            "chat_id": chat_id,
+            "text": str(e),
+            "message_thread_id": thread_id
+        }
+
+        # 使用 urllib.parse.urlencode 将字典转换为 URL 编码的字符串，并编码为 utf-8 字节流
+        data_encoded = urllib.parse.urlencode(data).encode('utf-8')
+
+        # 创建 Request 对象，传入 data 参数会自动将其转换为 POST 请求
+        req = urllib.request.Request(url, data=data_encoded)
+
         try:
-            bot_token = os.getenv("TG_BOT_TOKEN")
-            chat_id = os.getenv("TG_CHAT_ID")
-            thread_id = os.getenv("TG_MESSAGE_THREAD_ID")
-            
-            if bot_token and chat_id:
-                tg_url = f"https://api.telegram.org/{bot_token}/sendMessage"
-                payload = {
-                    "chat_id": chat_id,
-                    "text": str(e)
-                }
-                if thread_id:
-                    payload["message_thread_id"] = thread_id
-                    
-                data = urlencode(payload).encode('utf-8')
-                req = urllib.request.Request(tg_url, data=data)
-                urllib.request.urlopen(req, timeout=5)
-        except Exception as tg_e:
-            print(f"Telegram notification failed: {tg_e}")
+            # 发送请求并读取响应
+            with urllib.request.urlopen(req) as response:
+                response_body = response.read().decode('utf-8')
+
+                # 将返回的 JSON 字符串解析为 Python 字典并格式化打印
+                result = json.loads(response_body)
+                print("消息发送成功！返回结果：")
+                print(json.dumps(result, indent=4, ensure_ascii=False))
+
+        except urllib.error.URLError as e1:
+            print(f"请求失败: {e1}")
+        except Exception as e2:
+            print(f"发生错误: {e2}")
 
         raise HTTPException(status_code=500, detail=str(e))
 
