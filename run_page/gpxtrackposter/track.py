@@ -130,6 +130,7 @@ class Track:
 
     def load_from_db(self, activity):
         # use strava as file name
+        self.name = activity.name
         self.file_names = [str(activity.run_id)]
         self.start_time = datetime.datetime.strptime(
             activity.start_date_local, "%Y-%m-%d %H:%M:%S"

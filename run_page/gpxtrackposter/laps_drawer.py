@@ -26,10 +26,52 @@ class LapsDrawer(TracksDrawer):
     def __init__(self, the_poster: Poster):
         super().__init__(the_poster)
 
+    @staticmethod
+    def _encrypt_location(text: str) -> str:
+        """简单加密：字符ASCII码+7，然后反转字符串"""
+        encrypted = ''.join(chr(ord(c) + 7) for c in text)
+        return encrypted[::-1]
+
+    @staticmethod
+    def _decrypt_location(encrypted: str) -> str:
+        """解密：反转字符串，然后字符ASCII码-7"""
+        reversed_text = encrypted[::-1]
+        return ''.join(chr(ord(c) - 7) for c in reversed_text)
+
     def draw(self, dr: svgwrite.Drawing, size: XY, offset: XY):
         """For each track, draw it on the poster."""
         if self.poster.tracks is None:
             raise PosterError("No tracks to draw.")
+
+        # 获取第一个 track 的第一个坐标点，添加到 SVG 的 defs 中
+        if self.poster.tracks and self.poster.tracks[0].polylines:
+            first_track = self.poster.tracks[0]
+            first_polyline = first_track.polylines[0]
+            if first_polyline:
+                first_point = first_polyline[0]  # s2.LatLng 对象
+                lat = first_point.lat().degrees
+                lng = first_point.lng().degrees
+                # 加密位置信息
+                location_str = f"{lat},{lng}"
+                encrypted_location = self._encrypt_location(location_str)
+                # 在 defs 中添加一个不可见的 text 元素存储加密后的位置信息
+                location_text = dr.text(encrypted_location, id="location", visibility="hidden")
+                dr.defs.add(location_text)
+
+            print(first_track.name, first_track.track_name)
+
+            # 提取并保存 name 信息（按空格或" - "分割，取最后的内容）
+            if hasattr(first_track, 'name') and first_track.name:
+                name = first_track.name.strip()
+                # 先尝试按 " - " 分割，如果存在则取后面的部分
+                if ' - ' in name:
+                    name = name.split(' - ')[-1]
+                # 如果包含空格，取最后一部分
+                elif ' ' in name:
+                    name = name.split()[-1]
+                # 在 defs 中添加 name 信息
+                name_text = dr.text(name, id="name", visibility="hidden")
+                dr.defs.add(name_text)
 
         for index, tr in enumerate(self.poster.tracks[::-1]):
             if tr.length >= 1500:
