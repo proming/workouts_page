@@ -1,11 +1,10 @@
-import PropTypes from 'prop-types';
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import Header from '@/components/Header';
-import useSiteMetadata from '@/hooks/useSiteMetadata';
+import getSiteMetadata from '@/hooks/useSiteMetadata';
 
 const Layout = ({ children }: React.PropsWithChildren) => {
-  const { siteTitle, description, keywords } = useSiteMetadata();
+  const { siteTitle, description, keywords } = getSiteMetadata();
 
   return (
     <>
@@ -23,10 +22,6 @@ const Layout = ({ children }: React.PropsWithChildren) => {
       <div className="mx-auto mb-16 p-4 lg:flex lg:p-16">{children}</div>
     </>
   );
-};
-
-Layout.propTypes = {
-  children: PropTypes.node.isRequired,
 };
 
 export default Layout;

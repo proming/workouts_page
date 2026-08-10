@@ -70,6 +70,16 @@ TYPE_DICT = {
     "AlpineSki": "Ski",  # strava
     "Ski": "Ski",
     "BackcountrySki": "BackcountrySki",
+    # google health
+    "trail_run": "Run",
+    "biking": "Ride",
+    "outdoor_bike": "Ride",
+    "electric_bike": "Ride",
+    "mountain_biking": "Ride",
+    "skiing": "Ski",
+    "snowboarding": "Swim",
+    "swimming_open_water": "Swim",
+    "swimming_pool": "Swim",
 }
 
 MAPPING_TYPE = [

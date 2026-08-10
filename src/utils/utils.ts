@@ -1,12 +1,6 @@
-import * as mapboxPolyline from '@mapbox/polyline';
-import gcoord from 'gcoord';
-import { WebMercatorViewport } from '@math.gl/web-mercator';
-import { RPGeometry } from '@/static/run_countries';
 import { chinaCities } from '@/static/city';
 import {
-  MAIN_COLOR,
   MUNICIPALITY_CITIES_ARR,
-  NEED_FIX_MAP,
   RUN_TITLES,
   RIDE_COLOR,
   VIRTUAL_RIDE_COLOR,
@@ -20,18 +14,8 @@ import {
   SNOWBOARD_COLOR,
   TRAIL_RUN_COLOR,
   RICH_TITLE,
-  MAP_TILE_STYLES,
-  MAP_TILE_STYLE_DARK,
   getRuntimeSingleColor,
-  MAIN_COLOR_LIGHT,
 } from './const';
-import {
-  FeatureCollection,
-  LineString,
-  Feature,
-  GeoJsonProperties,
-} from 'geojson';
-import { getMapThemeFromCurrentTheme } from '@/hooks/useTheme';
 
 export type Coordinate = [number, number];
 
@@ -216,66 +200,6 @@ const intComma = (x = '') => {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
-const pathForRun = (run: Activity): Coordinate[] => {
-  try {
-    if (!run.summary_polyline) {
-      return [];
-    }
-    const c = mapboxPolyline.decode(run.summary_polyline);
-    // reverse lat long for mapbox
-    c.forEach((arr) => {
-      [arr[0], arr[1]] = !NEED_FIX_MAP
-        ? [arr[1], arr[0]]
-        : gcoord.transform([arr[1], arr[0]], gcoord.GCJ02, gcoord.WGS84);
-    });
-    // try to use location city coordinate instead , if runpath is incomplete
-    if (c.length === 2 && String(c[0]) === String(c[1])) {
-      const { coordinate } = locationForRun(run);
-      if (coordinate?.[0] && coordinate?.[1]) {
-        return [coordinate, coordinate];
-      }
-    }
-    return c;
-  } catch (_err) {
-    return [];
-  }
-};
-
-const geoJsonForRuns = (runs: Activity[]): FeatureCollection<LineString> => ({
-  type: 'FeatureCollection',
-  features: runs.map((run) => {
-    const points = pathForRun(run);
-    const color = colorFromType(run.type);
-    return {
-      type: 'Feature',
-      properties: {
-        color: color,
-      },
-      geometry: {
-        type: 'LineString',
-        coordinates: points,
-        workoutType: run.type,
-      },
-      name: run.name,
-    };
-  }),
-});
-
-const geoJsonForMap = async (): Promise<FeatureCollection<RPGeometry>> => {
-  const [{ chinaGeojson }, worldGeoJson] = await Promise.all([
-    import('@/static/run_countries'),
-    import('@surbowl/world-geo-json-zh/world.zh.json'),
-  ]);
-
-  return {
-    type: 'FeatureCollection',
-    features: [
-      ...worldGeoJson.default.features,
-      ...chinaGeojson.features,
-    ] as Feature<RPGeometry, GeoJsonProperties>[],
-  };
-};
-
 const titleForType = (type: string): string => {
   switch (type) {
     case 'Run':
@@ -396,48 +320,6 @@ const colorFromType = (workoutType: string): string => {
   }
 };
 
-export interface IViewState {
-  longitude?: number;
-  latitude?: number;
-  zoom?: number;
-}
-
-const getBoundsForGeoData = (
-  geoData: FeatureCollection<LineString>
-): IViewState => {
-  const { features } = geoData;
-  let points: Coordinate[] = [];
-  // find first have data
-  for (const f of features) {
-    if (f.geometry.coordinates.length) {
-      points = f.geometry.coordinates as Coordinate[];
-      break;
-    }
-  }
-  if (points.length === 0) {
-    return { longitude: 20, latitude: 20, zoom: 3 };
-  }
-  if (points.length === 2 && String(points[0]) === String(points[1])) {
-    return { longitude: points[0][0], latitude: points[0][1], zoom: 9 };
-  }
-  // Calculate corner values of bounds
-  const pointsLong = points.map((point) => point[0]) as number[];
-  const pointsLat = points.map((point) => point[1]) as number[];
-  const cornersLongLat: [Coordinate, Coordinate] = [
-    [Math.min(...pointsLong), Math.min(...pointsLat)],
-    [Math.max(...pointsLong), Math.max(...pointsLat)],
-  ];
-  const viewState = new WebMercatorViewport({
-    width: 800,
-    height: 600,
-  }).fitBounds(cornersLongLat, { padding: 200 });
-  let { longitude, latitude, zoom } = viewState;
-  if (features.length > 1) {
-    zoom = 11.5;
-  }
-  return { longitude, latitude, zoom };
-};
-
 const filterYearRuns = (run: Activity, year: string) => {
   if (run && run.start_date_local) {
     return run.start_date_local.slice(0, 4) === year;
@@ -479,7 +361,7 @@ const filterAndSortRuns = (
   item2: string | null,
   filterFunc2: ((_run: Activity, _bvalue: string) => boolean) | null
 ) => {
-  let s = activities;
+  let s = activities.slice();
   if (item !== 'Total') {
     s = activities.filter((run) => filterFunc(run, item));
   }
@@ -497,64 +379,12 @@ const sortDateFunc = (a: Activity, b: Activity) => {
 };
 const sortDateFuncReverse = (a: Activity, b: Activity) => sortDateFunc(b, a);
 
-const getMapStyle = (vendor: string, styleName: string, token: string) => {
-  const style = (MAP_TILE_STYLES as any)[vendor][styleName];
-  if (!style) {
-    return MAP_TILE_STYLES.default;
-  }
-  if (vendor === 'maptiler' || vendor === 'stadiamaps') {
-    return style + token;
-  }
-  return style;
-};
-
-const isTouchDevice = () => {
-  if (typeof window === 'undefined') return false;
-  return (
-    'ontouchstart' in window ||
-    navigator.maxTouchPoints > 0 ||
-    window.innerWidth <= 768
-  ); // Consider small screens as touch devices
-};
-
-/**
- * Determines the appropriate map theme based on current settings
- * @returns The map theme style to use
- */
-const getMapTheme = (): string => {
-  if (typeof window === 'undefined') return MAP_TILE_STYLE_DARK;
-
-  // Check for explicit theme in DOM
-  const dataTheme = document.documentElement.getAttribute('data-theme') as
-    | 'light'
-    | 'dark'
-    | null;
-
-  // Check for saved theme in localStorage
-  const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-
-  // Determine theme based on priority:
-  // 1. DOM attribute
-  // 2. localStorage
-  // 3. Default to dark theme
-  if (dataTheme) {
-    return getMapThemeFromCurrentTheme(dataTheme);
-  } else if (savedTheme) {
-    return getMapThemeFromCurrentTheme(savedTheme);
-  } else {
-    return getMapThemeFromCurrentTheme('dark');
-  }
-};
-
 export {
   titleForShow,
   formatPace,
   scrollToMap,
   locationForRun,
   intComma,
-  pathForRun,
-  geoJsonForRuns,
-  geoJsonForMap,
   titleForRun,
   typeForRun,
   titleForType,
@@ -564,12 +394,8 @@ export {
   filterAndSortRuns,
   sortDateFunc,
   sortDateFuncReverse,
-  getBoundsForGeoData,
   filterTypeRuns,
   colorFromType,
   formatRunTime,
   convertMovingTime2Sec,
-  getMapStyle,
-  isTouchDevice,
-  getMapTheme,
 };

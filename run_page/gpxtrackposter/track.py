@@ -23,6 +23,12 @@ from tcxreader.tcxreader import TCXReader
 from .exceptions import TrackLoadError
 from .utils import parse_datetime_to_local, get_normalized_sport_type
 
+from pathlib import Path
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from config import TYPE_DICT
+
 start_point = namedtuple("start_point", "lat lon")
 run_map = namedtuple("polyline", "summary_polyline")
 
@@ -139,6 +145,7 @@ class Track:
         self.polylines = [[s2.LatLng.from_degrees(p[0], p[1]) for p in polyline_data]]
         self.run_id = activity.run_id
         self.type = get_normalized_sport_type(activity.type)
+        self.subtype = activity.subtype if hasattr(activity, "subtype") else None
         self.average_heartrate = activity.average_heartrate
         self.average_speed = activity.average_speed
         # Load moving_dict from database
@@ -204,6 +211,8 @@ class Track:
             "elapsed_time": datetime.timedelta(seconds=elapsed_time),
             "average_speed": self.length / moving_time if moving_time else 0,
         }
+        activity_type = tcx.activity_type.lower() if tcx.activity_type else "Run"
+        self.type = TYPE_DICT.get(activity_type)
 
     def _calc_moving_time(self, trackpoints, seconds_threshold=10):
         moving_time = 0
@@ -421,11 +430,9 @@ class Track:
         self.moving_dict["elapsed_time"] = datetime.timedelta(
             seconds=message["total_elapsed_time"]
         )
-        self.moving_dict["average_speed"] = (
-            message["enhanced_avg_speed"]
-            if message["enhanced_avg_speed"]
-            else message["avg_speed"]
-        )
+        self.moving_dict["average_speed"] = message.get(
+            "enhanced_avg_speed"
+        ) or message.get("avg_speed", 0)
         for record in fit["record_mesgs"]:
             if "position_lat" in record and "position_long" in record:
                 lat = record["position_lat"] / SEMICIRCLE
